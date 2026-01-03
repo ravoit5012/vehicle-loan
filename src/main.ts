@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { constants } from './common/constants';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -11,17 +12,16 @@ async function bootstrap() {
       origin: [
         "http://localhost:5173",   // Vite frontend
         "http://localhost:3000",   // Next.js frontend
+        "http://localhost:3001",   // Next.js frontend
       ],
       methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
       credentials: true,
   });
 
 
-  app.setGlobalPrefix('/api/');
-
-  const port = process.env.PORT || 3000;
+  app.setGlobalPrefix(constants.globalPrefix);
 
   app.use(cookieParser());
-  await app.listen(port);
+  await app.listen(constants.port);
 }
 bootstrap();
