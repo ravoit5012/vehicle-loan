@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { constants } from 'src/common/constants';
+import { constantValues } from 'src/common/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const payload = this.jwtService.verify(token, {
-        secret: constants.jwtSecret,
+        secret: constantValues.jwtSecret,
       });
 
       const { sub, role } = payload;

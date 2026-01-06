@@ -2,6 +2,11 @@
 /dist
 /node_modules
 /build
+/uploads
+
+/admin.ts
+/manager.ts
+/agent.ts
 
 # Logs
 logs

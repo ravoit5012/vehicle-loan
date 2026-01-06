@@ -4,6 +4,7 @@ import { UseGuards, Req } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth-guard';
 import { AuthService } from './auth.service';
 import { Role } from 'src/common/enums/role.enum';
+import { constantValues } from 'src/common/constants';
 
 @Controller('auth')
 export class AuthController {
@@ -26,7 +27,8 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.ENVIRONMENT === 'development',
       sameSite: 'none',
-      maxAge: 24 * 60 * 60 * 1000,
+      // maxAge: 24 * 60 * 60 * 1000,
+      maxAge: constantValues.jwtExpiry,
     });
 
     return {

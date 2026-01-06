@@ -15,7 +15,6 @@ model Manager {
   email       String?
   username    String    @unique
   password    String
-  manager     String
   status      Boolean   @default(true)
   address     String?
   city        String?
@@ -23,6 +22,7 @@ model Manager {
   createdAt   DateTime  @default(now())
 
   agents      Agent[]
+  customers   Customer[]
 }
 
 model Admin {
@@ -43,6 +43,7 @@ model Agent {
 
   managerId  String?  @db.ObjectId
   manager    Manager?  @relation(fields: [managerId], references: [id])
+  customers Customer[]
 }
 
 model Loan {
@@ -50,6 +51,133 @@ model Loan {
   status     LoanStatus
   createdAt  DateTime   @default(now())
 }
+
+model Customer {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Personal Information
+  applicantName String
+  guardianName  String
+  relationType  RelationType
+  religion      Religion
+
+  village       String
+  postOffice    String
+  policeStation String
+  district      String
+  pinCode       String
+
+  mobileNumber  String
+  maritalStatus MaritalStatus
+  gender        Gender
+  dateOfBirth   DateTime
+
+  // Nominee Details
+  nomineeName          String
+  nomineeMobileNumber  String
+  nomineeRelation      NomineeRelation
+  nomineeVillage       String
+  nomineePostOffice    String
+  nomineePoliceStation String
+  nomineeDistrict      String
+  nomineePinCode       String
+
+  // Document Details
+  panNumber   String @unique
+  panImageUrl String
+
+  poiDocumentType   POIDocumentType
+  poiDocumentNumber String
+  poiFrontImageUrl  String
+  poiBackImageUrl   String
+
+  poaDocumentType  POADocumentType
+  poaDocumentNumber String
+  poaFrontImageUrl String
+  poaBackImageUrl  String
+
+  applicantSignatureUrl String
+  personalPhotoUrl      String
+
+  // Account Information
+  memberId String @unique
+  email    String @unique
+  password String
+
+  accountStatus AccountStatus @default(ACTIVE)
+
+  // Relations
+  managerId String? @db.ObjectId
+  manager   Manager? @relation(fields: [managerId], references: [id])
+
+  agentId String? @db.ObjectId
+  agent   Agent?  @relation(fields: [agentId], references: [id])
+
+  // Meta
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+enum RelationType {
+  SO
+  WO
+  DO
+}
+
+enum Religion {
+  HINDU
+  MUSLIM
+  CHRISTIAN
+  SIKH
+  BUDDHIST
+  JAIN
+  OTHER
+}
+
+enum MaritalStatus {
+  MARRIED
+  UNMARRIED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum NomineeRelation {
+  FATHER
+  MOTHER
+  SPOUSE
+  SON
+  DAUGHTER
+  BROTHER
+  SISTER
+  OTHER
+}
+
+enum POIDocumentType {
+  AADHAR
+  VOTER_ID
+  DRIVING_LICENSE
+  PASSPORT
+}
+
+enum POADocumentType {
+  AADHAR
+  VOTER_ID
+  DRIVING_LICENSE
+  ELECTRICITY_BILL
+  GAS_BILL
+  BANK_STATEMENT
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+}
+
 
 
 enum Role {
