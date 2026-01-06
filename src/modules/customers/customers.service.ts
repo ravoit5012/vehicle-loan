@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -13,24 +14,55 @@ export class CustomersService {
     if (!dto.managerId || !dto.agentId) {
       throw new BadRequestException("Manager and agent IDs are required");
     }
-    return this.prisma.customer.create({
-      data: {
-        ...dto,
-        password: hashedPassword,
-        dateOfBirth: new Date(dto.dateOfBirth),
-        managerId: dto.managerId,
-        agentId: dto.agentId,
+    try {
+      return this.prisma.customer.create({
+        data: {
+          ...dto,
+          password: hashedPassword,
+          dateOfBirth: new Date(dto.dateOfBirth),
+          managerId: dto.managerId,
+          agentId: dto.agentId,
 
-        // Store local URLs
-        panImageUrl: `/files/${files.panImage[0].filename}`,
-        poiFrontImageUrl: `/files/${files.poiFrontImage[0].filename}`,
-        poiBackImageUrl: `/files/${files.poiBackImage[0].filename}`,
-        poaFrontImageUrl: `/files/${files.poaFrontImage[0].filename}`,
-        poaBackImageUrl: `/files/${files.poaBackImage[0].filename}`,
-        applicantSignatureUrl: `/files/${files.applicantSignature[0].filename}`,
-        personalPhotoUrl: `/files/${files.personalPhoto[0].filename}`,
-      },
-    });
+          // Store local URLs
+          panImageUrl: `/files/${files.panImage[0].filename}`,
+          poiFrontImageUrl: `/files/${files.poiFrontImage[0].filename}`,
+          poiBackImageUrl: `/files/${files.poiBackImage[0].filename}`,
+          poaFrontImageUrl: `/files/${files.poaFrontImage[0].filename}`,
+          poaBackImageUrl: `/files/${files.poaBackImage[0].filename}`,
+          applicantSignatureUrl: `/files/${files.applicantSignature[0].filename}`,
+          personalPhotoUrl: `/files/${files.personalPhoto[0].filename}`,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const target = error.meta?.target;
+
+        let field = Array.isArray(target) ? target[0] : target;
+
+        if (typeof target === 'string') {
+          // Extract field name from index: Customer_panNumber_key
+          field = target.replace(/^Customer_/, '').replace(/_key$/, '');
+        }
+
+        const messages: Record<string, string> = {
+          panNumber: 'PAN Number already exists in the database',
+          poaDocumentNumber: 'POA Document Number already exists in the database',
+          poiDocumentNumber: 'POI Document Number already exists in the database',
+          mobileNumber: 'Mobile number already exists',
+          email: 'Email already exists',
+          memberId: 'Member ID already exists',
+        };
+
+        throw new BadRequestException(
+          messages[field] || 'Duplicate field value detected'
+        );
+      }
+
+      throw error;
+    }
   }
 
   async getCustomerCount() {
@@ -123,9 +155,37 @@ export class CustomersService {
       });
       return { message: 'Customer updated successfully' };
     } catch (error) {
-      console.log("Error updating customer:", error);
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const target = error.meta?.target;
+
+        let field = Array.isArray(target) ? target[0] : target;
+
+        if (typeof target === 'string') {
+          // Extract field name from index: Customer_panNumber_key
+          field = target.replace(/^Customer_/, '').replace(/_key$/, '');
+        }
+
+        const messages: Record<string, string> = {
+          panNumber: 'PAN Number already exists in the database',
+          poaDocumentNumber: 'POA Document Number already exists in the database',
+          poiDocumentNumber: 'POI Document Number already exists in the database',
+          mobileNumber: 'Mobile number already exists',
+          email: 'Email already exists',
+          memberId: 'Member ID already exists',
+        };
+
+        throw new BadRequestException(
+          messages[field] || 'Duplicate field value detected'
+        );
+      }
+
       throw error;
     }
+
+
   }
 
   async deleteCustomer(id: string) {

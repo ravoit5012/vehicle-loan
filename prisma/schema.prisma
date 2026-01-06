@@ -67,7 +67,7 @@ model Customer {
   district      String
   pinCode       String
 
-  mobileNumber  String
+  mobileNumber  String  @unique
   maritalStatus MaritalStatus
   gender        Gender
   dateOfBirth   DateTime
@@ -87,12 +87,12 @@ model Customer {
   panImageUrl String
 
   poiDocumentType   POIDocumentType
-  poiDocumentNumber String
+  poiDocumentNumber String  @unique
   poiFrontImageUrl  String
   poiBackImageUrl   String
 
   poaDocumentType  POADocumentType
-  poaDocumentNumber String
+  poaDocumentNumber String  @unique
   poaFrontImageUrl String
   poaBackImageUrl  String
 
