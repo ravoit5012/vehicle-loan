@@ -10,12 +10,13 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { ManagerModule } from './modules/manager/manager.module';
 import { AgentModule } from './modules/agent/agent.module';
+import { LoanTypesModule } from './modules/loan-types/loan-types.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
-      serveRoot: '/files', // Accessible via http://localhost:3000/files/<filename>
+      serveRoot: '/files',
     }),
     HealthModule,
     PrismaModule,
@@ -23,6 +24,7 @@ import { AgentModule } from './modules/agent/agent.module';
     CustomersModule,
     ManagerModule,
     AgentModule,
+    LoanTypesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

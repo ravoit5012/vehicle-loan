@@ -46,6 +46,12 @@ model Agent {
   customers Customer[]
 }
 
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
 model Loan {
   id         String     @id @default(auto()) @map("_id") @db.ObjectId
   status     LoanStatus
@@ -178,16 +184,57 @@ enum AccountStatus {
   INACTIVE
 }
 
+model LoanType {
+  id                String      @id @map("_id") @default(auto()) @db.ObjectId
+  loanName          String      @unique
+  status            LoanStatus  @default(ACTIVE)
+  description       String?
 
+  // Financial Details
+  minAmount         Float
+  maxAmount         Float
+  interestRate      Float
+  interestType      InterestType
 
-enum Role {
-  ADMIN
-  MANAGER
-  AGENT
+  // Processing and Other Charges
+  processingFees    Fee
+  insuranceFees     Fee
+  otherFees         OtherFee[]
+
+  // Loan Duration & Collection
+  loanDuration      Int // in months or days, choose your standard
+  collectionFreq    CollectionFrequency
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 }
 
+// Enums
 enum LoanStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  ACTIVE
+  INACTIVE
+}
+
+enum InterestType {
+  FLAT
+  REDUCING_BALANCE
+}
+
+enum CollectionFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+// Fees as nested objects
+type Fee {
+  amount      Float
+  isPercentage Boolean
+}
+
+type OtherFee {
+  amount      Float
+  isPercentage Boolean
+  description String
 }
