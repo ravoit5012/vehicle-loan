@@ -17,8 +17,8 @@ export class AgentController {
   }
 
   @Get('/manager/:managerId')
-async getAgentsByManager(@Param('managerId') managerId: string) {
-  return this.agentService.getAgentsByManager(managerId);
-}
+  async getAgentsByManager(@Param('managerId') managerId: string) {
+    return this.agentService.getAgentsByManager(managerId);
+  }
 
 }

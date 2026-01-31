@@ -23,6 +23,7 @@ model Manager {
 
   agents      Agent[]
   customers   Customer[]
+ // loanApplications LoanApplication[]
 }
 
 model Admin {
@@ -44,6 +45,7 @@ model Agent {
   managerId  String?  @db.ObjectId
   manager    Manager?  @relation(fields: [managerId], references: [id])
   customers Customer[]
+ // loanApplications LoanApplication[]
 }
 
 enum Role {
@@ -122,6 +124,7 @@ model Customer {
   // Meta
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // loanApplications LoanApplication[]
 }
 
 
@@ -207,6 +210,8 @@ model LoanType {
 
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
+
+ // loanApplications LoanApplication[]
 }
 
 // Enums
@@ -237,4 +242,150 @@ type OtherFee {
   amount      Float
   isPercentage Boolean
   description String
+}
+
+
+enum LoanApplicationStatus {
+  DRAFT
+  SUBMITTED
+  CALL_VERIFIED
+  CONTRACT_GENERATED
+  CONTRACT_SIGNED
+  FIELD_VERIFIED
+  ADMIN_APPROVED
+  DISBURSED
+  REJECTED
+  CLOSED
+
+  REJECTED_BY_MANAGER
+  REJECTED_BY_ADMIN
+}
+
+enum FeesPaymentMethod {
+  SEPARATE
+  DEDUCTED
+}
+
+enum DisbursementMethod {
+  CASH
+  BANK_TRANSFER
+}
+
+type FeeSnapshot {
+  amount       Float
+  isPercentage Boolean
+  description  String?
+}
+
+
+type DocumentMeta {
+  url           String
+  uploadedAt    DateTime
+  uploadedById  String
+  latitude      Float?
+  longitude     Float?
+}
+
+type HouseMeta {
+  url           String
+  uploadedAt    DateTime
+  uploadedById  String
+  capturedLive  Boolean
+  latitude      Float
+  longitude     Float
+}
+
+type RepaymentSnapshot {
+  emiNumber     Int
+  dueDate       DateTime
+  emiAmount     Float
+  paidAmount    Float
+  paidDate      DateTime?
+  status        String
+}
+
+model LoanApplication {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // =========================
+  // Relations
+  // =========================
+  customerId String @db.ObjectId
+ // customer   Customer? @relation(fields: [customerId], references: [id])
+
+  loanTypeId String @db.ObjectId
+ // loanType   LoanType? @relation(fields: [loanTypeId], references: [id])
+
+  agentId String @db.ObjectId
+ // agent   Agent? @relation(fields: [agentId], references: [id])
+
+  managerId String? @db.ObjectId
+ // manager   Manager? @relation(fields: [managerId], references: [id])
+
+  approvedByAdminId String? @db.ObjectId
+  // =========================
+  // Status & Lifecycle
+  // =========================
+  status LoanApplicationStatus @default(DRAFT)
+  rejectionRemark   String?
+
+  submittedAt        DateTime?
+  callVerifiedAt     DateTime?
+  contractSignedAt   DateTime?
+  fieldVerifiedAt    DateTime?
+  approvedAt         DateTime?
+  disbursedAt        DateTime?
+
+  // =========================
+  // Loan Financial Snapshot
+  // =========================
+  loanAmount         Float
+  interestRate       Float
+  interestType       InterestType
+  loanDuration       Int
+  collectionFreq     CollectionFrequency
+
+  // =========================
+  // Fees (Frozen Copy)
+  // =========================
+  processingFees FeeSnapshot
+  insuranceFees  FeeSnapshot
+  otherFees      FeeSnapshot[]
+
+  feesPaymentMethod FeesPaymentMethod
+
+  // =========================
+  // EMI & Interest Calculations
+  // =========================
+  firstEmiDate        DateTime
+  totalInterest       Float
+  totalPayableAmount  Float
+  disbursedAmount     Float
+
+  remainingAmount    Float
+
+  // =========================
+  // Disbursement
+  // =========================
+  disbursementMethod DisbursementMethod
+
+  // =========================
+  // Documents
+  // =========================
+  vehicleRcDocument        DocumentMeta?
+  vehicleInsuranceDocument DocumentMeta?
+  contractDocument         DocumentMeta?
+  signedContractDocument   DocumentMeta?
+  housePhotos              HouseMeta[]
+
+  // =========================
+  // Repayment Placeholder
+  // =========================
+  repayments RepaymentSnapshot[]
+
+  // =========================
+  // Meta
+  // =========================
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

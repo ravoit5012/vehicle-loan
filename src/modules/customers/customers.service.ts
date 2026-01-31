@@ -94,11 +94,13 @@ export class CustomersService {
         manager: {
           select: {
             name: true,
+            id:true,
           },
         },
         agent: {
           select: {
             name: true,
+            id:true,
           },
         },
       },
