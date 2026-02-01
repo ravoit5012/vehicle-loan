@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { extname } from 'path';
+import { uploadToStorage } from 'src/utils/uploadToStorage';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -15,6 +17,41 @@ export class CustomersService {
       throw new BadRequestException("Manager and agent IDs are required");
     }
     try {
+      const panImageUrl = await uploadToStorage(
+        files.panImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/pan${extname(files.panImage[0].originalname)}`,
+        files.panImage[0].mimetype
+      );
+      const poiFrontImageUrl = await uploadToStorage(
+        files.panImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/poiFrontImage${extname(files.panImage[0].originalname)}`,
+        files.panImage[0].mimetype
+      );
+      const poiBackImageUrl = await uploadToStorage(
+        files.panImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/poiBackImage${extname(files.panImage[0].originalname)}`,
+        files.panImage[0].mimetype
+      );
+      const poaFrontImageUrl = await uploadToStorage(
+        files.panImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/poaFrontImage${extname(files.panImage[0].originalname)}`,
+        files.panImage[0].mimetype
+      );
+      const poaBackImageUrl = await uploadToStorage(
+        files.panImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/poaBackImage${extname(files.panImage[0].originalname)}`,
+        files.panImage[0].mimetype
+      );
+      const applicantSignatureUrl = await uploadToStorage(
+        files.panImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/signature${extname(files.panImage[0].originalname)}`,
+        files.panImage[0].mimetype
+      );
+      const personalPhotoUrl = await uploadToStorage(
+        files.panImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/photo${extname(files.panImage[0].originalname)}`,
+        files.panImage[0].mimetype
+      );
       return this.prisma.customer.create({
         data: {
           ...dto,
@@ -22,15 +59,13 @@ export class CustomersService {
           dateOfBirth: new Date(dto.dateOfBirth),
           managerId: dto.managerId,
           agentId: dto.agentId,
-
-          // Store local URLs
-          panImageUrl: `/files/${files.panImage[0].filename}`,
-          poiFrontImageUrl: `/files/${files.poiFrontImage[0].filename}`,
-          poiBackImageUrl: `/files/${files.poiBackImage[0].filename}`,
-          poaFrontImageUrl: `/files/${files.poaFrontImage[0].filename}`,
-          poaBackImageUrl: `/files/${files.poaBackImage[0].filename}`,
-          applicantSignatureUrl: `/files/${files.applicantSignature[0].filename}`,
-          personalPhotoUrl: `/files/${files.personalPhoto[0].filename}`,
+          panImageUrl,
+          poiFrontImageUrl,
+          poiBackImageUrl,
+          poaFrontImageUrl,
+          poaBackImageUrl,
+          applicantSignatureUrl,
+          personalPhotoUrl,
         },
       });
     } catch (error) {
@@ -135,10 +170,10 @@ export class CustomersService {
         updatableData.password = await bcrypt.hash(updatableData.password, 10);
       }
 
-      // Convert dateOfBirth to Date if provided
-      if (updatableData.dateOfBirth) {
-        updatableData.dateOfBirth = new Date(updatableData.dateOfBirth);
-      }
+      // // Convert dateOfBirth to Date if provided
+      // if (updatableData.dateOfBirth) {
+      //   updatableData.dateOfBirth = new Date(updatableData.dateOfBirth);
+      // }
 
       await this.prisma.customer.update({
         where: { id },

@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { constantValues } from './common/constants';
 import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filters/exception-filter';
 import { join } from 'path';
 
@@ -31,7 +32,11 @@ async function bootstrap() {
       whitelist: true, // strip unknown fields
       forbidNonWhitelisted: true, // throw error for unknown fields
       transform: true, // auto-transform types like string -> Date
-      errorHttpStatusCode: 400,
+      errorHttpStatusCode: 400, 
+      exceptionFactory: (errors) => {
+        console.log(errors)
+        return new BadRequestException(errors)
+      },
     }),
   );
 

@@ -2,6 +2,7 @@ import {
   IsString,
   IsEmail,
   IsEnum,
+  IsOptional,
   IsDateString,
 } from 'class-validator'
 import {
@@ -54,7 +55,7 @@ export class CreateCustomerDto {
   gender: Gender
 
   @IsDateString()
-  dateOfBirth: Date
+  dateOfBirth: string
 
   // Nominee
   @IsString()
@@ -86,7 +87,8 @@ export class CreateCustomerDto {
   panNumber: string
 
   @IsString()
-  panImageUrl: string
+  @IsOptional()
+  panImageUrl?: string
 
   @IsEnum(POIDocumentType)
   poiDocumentType: POIDocumentType
@@ -95,10 +97,12 @@ export class CreateCustomerDto {
   poiDocumentNumber: string
 
   @IsString()
-  poiFrontImageUrl: string
+  @IsOptional()
+  poiFrontImageUrl?: string
 
   @IsString()
-  poiBackImageUrl: string
+  @IsOptional()
+  poiBackImageUrl?: string
 
   @IsEnum(POADocumentType)
   poaDocumentType: POADocumentType
@@ -107,16 +111,20 @@ export class CreateCustomerDto {
   poaDocumentNumber: string
 
   @IsString()
-  poaFrontImageUrl: string
+  @IsOptional()
+  poaFrontImageUrl?: string
 
   @IsString()
-  poaBackImageUrl: string
+  @IsOptional()
+  poaBackImageUrl?: string
 
   @IsString()
-  applicantSignatureUrl: string
+  @IsOptional()
+  applicantSignatureUrl?: string
 
   @IsString()
-  personalPhotoUrl: string
+  @IsOptional()
+  personalPhotoUrl?: string
 
   // Account
   @IsString()

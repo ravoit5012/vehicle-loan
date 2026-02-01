@@ -30,18 +30,14 @@ export class FeeDto {
 }
 
 export class CreateLoanDto {
-    // ======================
-    // Relations
-    // ======================
     @IsString()
     customerId: string
 
     @IsString()
     loanTypeId: string
+    @IsString()
+    agentId: string
 
-    // ======================
-    // Loan Inputs
-    // ======================
     @IsNumber()
     @Min(1)
     loanAmount: number
@@ -56,18 +52,12 @@ export class CreateLoanDto {
     @IsDateString()
     firstEmiDate: string
 
-    // ======================
-    // Fees & Disbursement
-    // ======================
     @IsEnum(FeesPaymentMethod)
     feesPaymentMethod: FeesPaymentMethod
 
     @IsEnum(DisbursementMethod)
     disbursementMethod: DisbursementMethod
 
-    // ======================
-    // Additional / Custom Fees
-    // ======================
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => FeeDto)
