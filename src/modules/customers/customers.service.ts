@@ -91,18 +91,8 @@ export class CustomersService {
         mobileNumber: true,
         email: true,
         accountStatus: true,
-        manager: {
-          select: {
-            name: true,
-            id:true,
-          },
-        },
-        agent: {
-          select: {
-            name: true,
-            id:true,
-          },
-        },
+        managerId: true,
+        agentId: true
       },
     });
   }
@@ -111,7 +101,6 @@ export class CustomersService {
     const customer = await this.prisma.customer.findUnique({
       where: { id },
     });
-    console.log("REQ RECIEVED")
     if (!customer) {
       throw new NotFoundException('Customer not found');
     }
@@ -201,7 +190,6 @@ export class CustomersService {
       await this.prisma.customer.delete({ where: { id } });
       return { message: 'Customer deleted successfully' };
     } catch (error) {
-      console.log("Error deleting customer:", error);
       throw error;
     }
   }

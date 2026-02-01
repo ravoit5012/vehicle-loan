@@ -114,7 +114,7 @@ export function generateEmiSchedule(
     schedule.push({
       emiNumber: i,
       dueDate: new Date(currentDate),
-      emiAmount: emi,
+      emiAmount: Math.round(emi * 100) / 100,
       paidAmount: 0,
       status: 'PENDING',
     });

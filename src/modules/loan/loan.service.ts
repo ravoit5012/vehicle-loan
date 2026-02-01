@@ -1,14 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateLoanDto } from './dto/create-loan.dto';
 import { UpdateLoanDto } from './dto/update-loan.dto';
+import { FeesPaymentMethod } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { calculateTotalFees, calculateFlatLoan, calculateReducingLoan, generateEmiSchedule, calculateDisbursedAmount } from 'src/utils/emi/getPeriodsPerYear';
 import { LoanApplicationStatus } from 'src/common/enums/loan-application-status.enum';
 import { generateContractPdf } from 'src/utils/generateContractPdf';
 import { uploadToStorage } from 'src/utils/uploadToStorage';
+import { CustomersService } from '../customers/customers.service';
 @Injectable()
 export class LoanService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private customersService: CustomersService,) { }
 
   async createLoanApplication(dto) {
     const agentId = dto.agentId;
@@ -25,7 +27,6 @@ export class LoanService {
       throw new Error('Loan type not found');
     }
 
-    // 1️⃣ Validation
     if (
       dto.loanAmount < loanType.minAmount ||
       dto.loanAmount > loanType.maxAmount
@@ -65,7 +66,6 @@ export class LoanService {
       dto.collectionFreq
     );
 
-    // 5️⃣ Disbursement
     const disbursedAmount = calculateDisbursedAmount(
       dto.loanAmount,
       totalFees,
@@ -74,9 +74,9 @@ export class LoanService {
 
     return this.prisma.loanApplication.create({
       data: {
-        customerId: customer.id,  // Just store the customerId directly
+        customerId: customer.id,
         loanTypeId: loanType.id,
-        agentId,  // If agentId is available, just store it directly
+        agentId,
         loanAmount: dto.loanAmount,
         interestRate: loanType.interestRate,
         interestType: loanType.interestType,
@@ -85,10 +85,10 @@ export class LoanService {
         processingFees: loanType.processingFees,
         insuranceFees: loanType.insuranceFees,
         otherFees: [...loanType.otherFees, ...dto.additionalFees],
-        totalInterest: loanCalc.totalInterest,
-        totalPayableAmount: loanCalc.totalPayable,
+        totalInterest: Math.round(loanCalc.totalInterest *100)/100,
+        totalPayableAmount: Math.round(loanCalc.totalPayable * 100) / 100,
         disbursedAmount,
-        remainingAmount: loanCalc.totalPayable,
+        remainingAmount: Math.round(loanCalc.totalPayable * 100)/100,
         firstEmiDate: dto.firstEmiDate,
         repayments: emiSchedule,
         feesPaymentMethod: dto.feesPaymentMethod,
@@ -100,29 +100,15 @@ export class LoanService {
 
   }
 
-
-
-
   async getAll() {
     return this.prisma.loanApplication.findMany({
       orderBy: { createdAt: 'desc' },
-      // include: {
-      //   customer: true,
-      //   loanType: true,
-      //   agent: true,
-      // },
     });
   }
 
   async getById(id: string) {
     return this.prisma.loanApplication.findUnique({
       where: { id },
-      // include: {
-      //   customer: true,
-      //   loanType: true,
-      //   agent: true,
-      //   manager: true,
-      // },
     });
   }
 
@@ -345,7 +331,6 @@ export class LoanService {
           `/loan-applications/${loanId}/field-verification/house_${i + 1}.jpg`
 
         const url = await uploadToStorage(file.buffer, relativePath)
-        console.log(latitude, longitude)
         housePhotos.push({
           url,
           uploadedAt: new Date(),
@@ -428,13 +413,58 @@ export class LoanService {
           `Loan amount cannot be disbursed from status ${loan.status}`
         );
       }
-      await this.prisma.loanApplication.update({
-        where: { id: loanId },
-        data: {
-          status: LoanApplicationStatus.DISBURSED,
-          approvedAt: new Date(Date.now()),
-        },
-      });
+
+      const customer = await this.customersService.getCustomerById(
+        loan.customerId,
+      );
+
+      if (!customer) {
+        throw new BadRequestException('Customer not found');
+      }
+      const totalFees = calculateTotalFees(
+        loan.loanAmount,
+        loan.processingFees,
+        loan.insuranceFees,
+        loan.otherFees,
+      );
+
+      const isDeducted = loan.feesPaymentMethod === FeesPaymentMethod.DEDUCTED;
+
+      // await this.prisma.loanApplication.update({
+      //   where: { id: loanId },
+      //   data: {
+      //     status: LoanApplicationStatus.DISBURSED,
+      //     approvedAt: new Date(Date.now()),
+      //   },
+      // });
+      await this.prisma.$transaction([
+        // Update loan status
+        this.prisma.loanApplication.update({
+          where: { id: loanId },
+          data: {
+            status: LoanApplicationStatus.DISBURSED,
+            approvedAt: new Date(),
+            disbursedAt: new Date(),
+          },
+        }),
+
+        // Create LoanFees entry
+        this.prisma.loanFees.create({
+          data: {
+            loanId: loan.id,
+            customerId: loan.customerId,
+            customerName: customer.applicantName,
+            customermobileNumber: customer.mobileNumber,
+            totalFees: totalFees,
+
+            paid: isDeducted,
+            paymentMethod: isDeducted ? 'DISBURSEMENT' : null,
+            transactionId: isDeducted ? 'DISBURSEMENT' : null,
+            paidAt: isDeducted ? new Date() : null,
+          },
+        }),
+      ]);
+
       return {
         success: true,
         message: "Loan amount disbursed successfully"
@@ -519,6 +549,182 @@ export class LoanService {
     });
 
     return { message: `Loan with ID ${id} has been successfully removed` };
+  }
+
+  async getAllFees() {
+    return this.prisma.loanFees.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async completeFeePayment(id, loanId, paymentMethod, transactionId) {
+    const fee = await this.prisma.loanFees.findFirst({
+      where: {
+        id: id,
+        loanId: loanId,
+      },
+    });
+
+    if (!fee) {
+      throw new NotFoundException('Fee record not found for this loan');
+    }
+
+    if (fee.paid) {
+      throw new BadRequestException('Fee already paid');
+    }
+
+    if (fee.paymentMethod === 'DISBURSEMENT') {
+      throw new BadRequestException(
+        'Fees already settled via disbursement',
+      );
+    }
+
+    return this.prisma.loanFees.update({
+      where: { id: fee.id },
+      data: {
+        paid: true,
+        paymentMethod: paymentMethod,
+        transactionId: transactionId,
+        paidAt: new Date(),
+      },
+    });
+  }
+
+  async getAllRepayments() {
+    const loans = await this.prisma.loanApplication.findMany({
+      select: {
+        id: true,
+        remainingAmount: true,
+        repayments: true, // all repayments of the loan
+      },
+    });
+
+    // Map each loan to the desired structure
+    const result = loans.map(loan => ({
+      loanId: loan.id,
+      remainingAmount: loan.remainingAmount,
+      repayments: loan.repayments,
+    }));
+
+    return result;
+  }
+
+  async getRepayments(loanId: string) {
+    const loan = await this.prisma.loanApplication.findUnique({
+      where: { id: loanId },
+      select: {
+        repayments: true,
+        remainingAmount: true,
+        status: true,
+      },
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan not found');
+    }
+
+    return loan;
+  }
+
+  async payEmi(loanId: string, dto) {
+    const loan = await this.prisma.loanApplication.findUnique({
+      where: { id: loanId },
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan not found');
+    }
+
+    const repayments = [...loan.repayments];
+    const index = repayments.findIndex(
+      r => r.emiNumber === dto.emiNumber
+    );
+
+    if (index === -1) {
+      throw new BadRequestException('Invalid EMI number');
+    }
+
+    const emi = repayments[index];
+
+    if (emi.status === 'PAID') {
+      throw new BadRequestException('EMI already paid');
+    }
+
+    // Update EMI
+    emi.paidAmount += dto.paidAmount;
+    emi.paidDate = new Date();
+
+    if (emi.paidAmount >= emi.emiAmount) {
+      emi.status = 'PAID';
+    } else {
+      emi.status = 'PARTIAL';
+    }
+
+    repayments[index] = emi;
+
+    // Update remaining loan amount
+    const newRemaining =
+      loan.remainingAmount - dto.paidAmount;
+
+    // Close loan if fully paid
+    const newStatus =
+      newRemaining <= 0 ? 'CLOSED' : loan.status;
+
+    await this.prisma.loanApplication.update({
+      where: { id: loanId },
+      data: {
+        repayments,
+        remainingAmount: Math.max(newRemaining, 0),
+        status: newStatus,
+      },
+    });
+
+    return {
+      message: 'EMI payment recorded',
+      emi,
+      remainingAmount: Math.max(newRemaining, 0),
+      loanStatus: newStatus,
+    };
+  }
+
+  async addPenalty(loanId: string, dto) {
+    const loan = await this.prisma.loanApplication.findUnique({
+      where: { id: loanId },
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan not found');
+    }
+
+    const repayments = [...loan.repayments];
+    const index = repayments.findIndex(
+      r => r.emiNumber === dto.emiNumber
+    );
+
+    if (index === -1) {
+      throw new BadRequestException('Invalid EMI number');
+    }
+
+    const emi = repayments[index];
+
+    if (emi.status === 'PAID') {
+      throw new BadRequestException('Cannot add penalty to paid EMI');
+    }
+
+    emi.emiAmount += dto.penaltyAmount;
+    repayments[index] = emi;
+
+    await this.prisma.loanApplication.update({
+      where: { id: loanId },
+      data: { repayments },
+    });
+
+    return {
+      message: 'Penalty added successfully',
+      emi,
+    };
   }
 
 }

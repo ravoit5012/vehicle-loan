@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Req, NotFoundException, BadRequestException, UseGuards, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
 import { LoanService } from './loan.service';
-import { CreateLoanDto } from './dto/create-loan.dto';
+import { CreateLoanDto, CompleteFeePaymentDto, PayEmiDto, AddPenaltyDto } from './dto/create-loan.dto';
 import { UpdateLoanDto } from './dto/update-loan.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth-guard';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
@@ -132,4 +132,56 @@ export class LoanController {
   remove(@Param('id') id: string) {
     return this.loanService.remove(id);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/get-all-fees')
+  async getAllFees() {
+    return this.loanService.getAllFees();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/collect-fees')
+  async completeFeePayment(
+    @Body() body: CompleteFeePaymentDto,
+  ) {
+    const { id, loanId, paymentMethod, transactionId } = body;
+
+    return this.loanService.completeFeePayment(
+      id,
+      loanId,
+      paymentMethod,
+      transactionId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/all-repayments')
+  async getAllRepayments() {
+    return this.loanService.getAllRepayments();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/repayments/:loanId')
+  async getRepayments(@Param('loanId') loanId: string) {
+    return this.loanService.getRepayments(loanId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('repayment/pay/:loanId')
+  async payEmi(
+    @Param('loanId') loanId: string,
+    @Body() dto: PayEmiDto,
+  ) {
+    return this.loanService.payEmi(loanId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('repayment/penalty/:loanId')
+  async addPenalty(
+    @Param('loanId') loanId: string,
+    @Body() dto: AddPenaltyDto,
+  ) {
+    return this.loanService.addPenalty(loanId, dto);
+  }
+
 }

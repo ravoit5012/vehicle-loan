@@ -83,3 +83,22 @@ export class CallVerifyLoanDto {
     remarks?: string
 }
 
+
+export class CompleteFeePaymentDto {
+    id: string;
+    loanId: string;
+    paymentMethod: string;
+    transactionId: string;
+}
+
+export class PayEmiDto {
+    emiNumber: number;
+    paidAmount: number;
+    paymentMethod: string;
+    transactionId: string;
+}
+
+export class AddPenaltyDto {
+  emiNumber: number;
+  penaltyAmount: number;
+}

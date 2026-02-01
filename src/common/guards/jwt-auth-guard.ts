@@ -42,14 +42,12 @@ export class JwtAuthGuard implements CanActivate {
         case 'MANAGER':
           user = await this.prisma.manager.findUnique({
             where: { id: sub },
-            include: { agents: true },
           });
           break;
 
         case 'AGENT':
           user = await this.prisma.agent.findUnique({
             where: { id: sub },
-            include: { manager: true },
           });
           break;
 

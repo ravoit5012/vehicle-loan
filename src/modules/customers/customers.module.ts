@@ -14,5 +14,6 @@ import { constantValues } from 'src/common/constants';
   ],
   controllers: [CustomersController],
   providers: [CustomersService],
+  exports:[CustomersService]
 })
 export class CustomersModule { }

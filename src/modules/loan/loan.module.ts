@@ -3,12 +3,15 @@ import { LoanService } from './loan.service';
 import { LoanController } from './loan.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { constantValues } from 'src/common/constants';
+import { CustomersModule } from '../customers/customers.module';
 
 @Module({
   imports: [JwtModule.register({
     secret: constantValues.jwtSecret,
     signOptions: { expiresIn: constantValues.jwtExpiry },
-  }),],
+  }),
+    CustomersModule
+  ],
   controllers: [LoanController],
   providers: [LoanService],
 })

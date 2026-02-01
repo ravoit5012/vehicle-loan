@@ -7,6 +7,11 @@ import { UpdateManagerDto } from './dto/update-manager.dto';
 export class ManagerController {
   constructor(private readonly managerService: ManagerService) { }
 
+  @Post()
+  async create(@Body() createManagerDto: CreateManagerDto) {
+    return this.managerService.createManager(createManagerDto);
+  }
+
   @Get('all')
   async getAllManagers() {
     return this.managerService.getAllManagers();
@@ -17,4 +22,16 @@ export class ManagerController {
     return this.managerService.getManagerById(id);
   }
 
+  @Patch('update/id/:id')
+  async updateManager(
+    @Param('id') id: string,
+    @Body() dto: UpdateManagerDto,
+  ) {
+    return this.managerService.updateManager(id, dto);
+  }
+
+  @Delete('delete/id/:id')
+  async deleteManager(@Param('id') id: string) {
+    return this.managerService.deleteManager(id);
+  }
 }
