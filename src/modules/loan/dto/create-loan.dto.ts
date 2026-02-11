@@ -75,9 +75,16 @@ export class CallVerifyLoanDto {
 
 
 export class CompleteFeePaymentDto {
+    @IsString()
     id: string;
+
+    @IsString()
     loanId: string;
+
+    @IsString()
     paymentMethod: string;
+
+    @IsString()
     transactionId: string;
 }
 

@@ -18,7 +18,6 @@ export async function generateContractPdf(data: any): Promise<Buffer> {
     const page = await browser.newPage();
     await page.setContent(content, { waitUntil: 'networkidle0' });
 
-    // Create the PDF as a Uint8Array
     const pdfBufferUint8Array = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -26,7 +25,6 @@ export async function generateContractPdf(data: any): Promise<Buffer> {
 
     await browser.close();
 
-    // Convert the Uint8Array to a Node.js Buffer explicitly
     const pdfBuffer = Buffer.from(pdfBufferUint8Array);
 
     return pdfBuffer;
