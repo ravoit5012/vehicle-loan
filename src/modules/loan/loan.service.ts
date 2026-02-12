@@ -144,6 +144,7 @@ export class LoanService {
     loanId: string,
     managerId: string
   ) {
+    try{
     // 1️⃣ Fetch loan with all required relations
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
@@ -229,7 +230,10 @@ export class LoanService {
         },
         status: LoanApplicationStatus.CONTRACT_GENERATED,
       },
-    })
+    })} catch (error) {
+      console.error(`Failed to generate contract: ${error.message}`)
+      throw new BadRequestException(`Failed to generate contract: ${error.message}`)
+    }
   }
 
   async uploadSignedContract(
