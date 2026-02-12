@@ -84,6 +84,49 @@ export class CreateCustomerDto {
 
   // Documents
   @IsString()
+  nomineePanNumber: string
+
+  @IsString()
+  @IsOptional()
+  nomineePanImageUrl?: string
+
+  @IsEnum(POIDocumentType)
+  nomineePoiDocumentType: POIDocumentType
+
+  @IsString()
+  nomineePoiDocumentNumber: string
+
+  @IsString()
+  @IsOptional()
+  nomineePoiFrontImageUrl?: string
+
+  @IsString()
+  @IsOptional()
+  nomineePoiBackImageUrl?: string
+
+  @IsEnum(POADocumentType)
+  nomineePoaDocumentType: POADocumentType
+
+  @IsString()
+  nomineePoaDocumentNumber: string
+
+  @IsString()
+  @IsOptional()
+  nomineePoaFrontImageUrl?: string
+
+  @IsString()
+  @IsOptional()
+  nomineePoaBackImageUrl?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeSignatureUrl?: string
+
+  @IsString()
+  @IsOptional()
+  nomineePersonalPhotoUrl?: string
+
+  @IsString()
   panNumber: string
 
   @IsString()
@@ -145,4 +188,10 @@ export class CreateCustomerDto {
 
   @IsString()
   agentId: string
+
+  @IsOptional()
+  createdAt?: Date;
+
+  @IsOptional()
+  updatedAt?: Date;
 }

@@ -52,6 +52,41 @@ export class CustomersService {
         `customers/${dto.applicantName}-${dto.mobileNumber}/photo${extname(files.panImage[0].originalname)}`,
         files.panImage[0].mimetype
       );
+      const nomineePanImageUrl = await uploadToStorage(
+        files.nomineePanImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePan${extname(files.nomineePanImage[0].originalname)}`,
+        files.nomineePanImage[0].mimetype
+      );
+      const nomineePoiFrontImageUrl = await uploadToStorage(
+        files.nomineePoiFrontImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePoiFront${extname(files.nomineePoiFrontImage[0].originalname)}`,
+        files.nomineePoiFrontImage[0].mimetype
+      );
+      const nomineePoiBackImageUrl = await uploadToStorage(
+        files.nomineePoiBackImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePoiBack${extname(files.nomineePoiBackImage[0].originalname)}`,
+        files.nomineePoiBackImage[0].mimetype
+      );
+      const nomineePoaFrontImageUrl = await uploadToStorage(
+        files.nomineePoaFrontImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePoaFront${extname(files.nomineePoaFrontImage[0].originalname)}`,
+        files.nomineePoaFrontImage[0].mimetype
+      );
+      const nomineePoaBackImageUrl = await uploadToStorage(
+        files.nomineePoaBackImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePoaBack${extname(files.nomineePoaBackImage[0].originalname)}`,
+        files.nomineePoaBackImage[0].mimetype
+      );
+      const nomineeSignatureUrl = await uploadToStorage(
+        files.nomineeSignature[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineeSignature${extname(files.nomineeSignature[0].originalname)}`,
+        files.nomineeSignature[0].mimetype
+      );
+      const nomineePersonalPhotoUrl = await uploadToStorage(
+        files.nomineePersonalPhoto[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePhoto${extname(files.nomineePersonalPhoto[0].originalname)}`,
+        files.nomineePersonalPhoto[0].mimetype
+      );
       return this.prisma.customer.create({
         data: {
           ...dto,
@@ -66,6 +101,13 @@ export class CustomersService {
           poaBackImageUrl,
           applicantSignatureUrl,
           personalPhotoUrl,
+          nomineePanImageUrl,
+          nomineePoiFrontImageUrl,
+          nomineePoiBackImageUrl,
+          nomineePoaFrontImageUrl,
+          nomineePoaBackImageUrl,
+          nomineeSignatureUrl,
+          nomineePersonalPhotoUrl,
         },
       });
     } catch (error) {

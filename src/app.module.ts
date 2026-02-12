@@ -12,6 +12,7 @@ import { ManagerModule } from './modules/manager/manager.module';
 import { AgentModule } from './modules/agent/agent.module';
 import { LoanTypesModule } from './modules/loan-types/loan-types.module';
 import { LoanModule } from './modules/loan/loan.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -27,6 +28,7 @@ import { LoanModule } from './modules/loan/loan.module';
     AgentModule,
     LoanTypesModule,
     LoanModule,
+    AnalyticsModule
   ],
   controllers: [AppController],
   providers: [AppService],

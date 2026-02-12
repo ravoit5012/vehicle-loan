@@ -84,6 +84,24 @@ model Customer {
   nomineeDistrict      String
   nomineePinCode       String
 
+  // Nominee Document Details
+  nomineePanNumber   String?
+  nomineePanImageUrl String
+
+  nomineePoiDocumentType   POIDocumentType
+  nomineePoiDocumentNumber String?
+  nomineePoiFrontImageUrl  String
+  nomineePoiBackImageUrl   String
+
+  nomineePoaDocumentType  POADocumentType
+  nomineePoaDocumentNumber String?
+  nomineePoaFrontImageUrl String
+  nomineePoaBackImageUrl  String
+
+  nomineeSignatureUrl String
+  nomineePersonalPhotoUrl      String
+
+
   // Document Details
   panNumber   String @unique
   panImageUrl String
