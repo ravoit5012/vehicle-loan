@@ -52,7 +52,7 @@ export class LoanController {
       const managerId = req.user.id;
       return this.loanService.generateContract(loanId, managerId);
     } catch (error) {
-      throw new BadRequestException(`Failed to generate contract: ${error.message}`);
+      console.log(`Failed to generate contract: ${error.message}`);
     }
   }
 
