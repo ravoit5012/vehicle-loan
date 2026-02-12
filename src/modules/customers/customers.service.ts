@@ -197,14 +197,27 @@ export class CustomersService {
 
       const { memberId, managerId, agentId, ...updatableData } = dto || {};
 
+      // const overwriteIfExists = async (field: string, fileName: string) => {
+      //   if (!files?.[field]?.[0]) return;
+
+      //   const file = files[field][0];
+
+      //   await uploadToStorage(
+      //     file.buffer,
+      //     `customers/${existingCustomer.applicantName}-${existingCustomer.mobileNumber}/${fileName}${extname(file.originalname)}`,
+      //     file.mimetype
+      //   );
+      // };
       const overwriteIfExists = async (field: string, fileName: string) => {
         if (!files?.[field]?.[0]) return;
 
         const file = files[field][0];
 
+        const key = `customers/${existingCustomer.applicantName}-${existingCustomer.mobileNumber}/${fileName}`;
+
         await uploadToStorage(
           file.buffer,
-          `customers/${existingCustomer.applicantName}-${existingCustomer.mobileNumber}/${fileName}${extname(file.originalname)}`,
+          key,
           file.mimetype
         );
       };
