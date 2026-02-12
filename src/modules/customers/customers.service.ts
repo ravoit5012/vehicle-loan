@@ -16,6 +16,8 @@ export class CustomersService {
     if (!dto.managerId || !dto.agentId) {
       throw new BadRequestException("Manager and agent IDs are required");
     }
+    console.log("FILES RECEIVED:", files);
+
     try {
       const panImageUrl = await uploadToStorage(
         files.panImage[0].buffer,

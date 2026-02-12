@@ -28,7 +28,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     AgentModule,
     LoanTypesModule,
     LoanModule,
-    AnalyticsModule
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

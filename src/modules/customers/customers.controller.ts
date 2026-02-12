@@ -51,16 +51,8 @@ export class CustomersController {
       },
     ),
   )
-  // async create(
-  //   @UploadedFiles() files: any,
-  //   @Body() dto: CreateCustomerDto,
-  // ) {
-  //   try {
-  //     console.log("Customer Creation Request Recieved");
-  //     return this.service.create(dto, files);
-  //   } catch (error) { console.error("Error creating customer:", error); throw error; }
-  // }
-  async create(dto: CreateCustomerDto, files: any) {
+  async create(@UploadedFiles() files: any,
+    @Body() dto: CreateCustomerDto) {
     console.log('Files received:', Object.keys(files));
     Object.entries(files).forEach(([key, value]) => {
       const fileArray = value as Express.Multer.File[] | undefined;
