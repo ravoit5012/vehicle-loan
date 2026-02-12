@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsEmail, IsNotEmpty, MinLength } from 'class-validator';
-
+import { AccountStatus } from '@prisma/client';
 export class CreateAgentDto {
     @IsString()
     @IsNotEmpty()
@@ -36,6 +36,10 @@ export class CreateAgentDto {
     @IsString()
     @IsNotEmpty()
     pincode: string;
+    
+    @IsString()
+    @IsOptional()
+    status: AccountStatus;
 
     @IsString()
     @IsNotEmpty()

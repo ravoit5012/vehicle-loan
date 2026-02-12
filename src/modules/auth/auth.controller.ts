@@ -26,7 +26,7 @@ export class AuthController {
     res.cookie('loginToken', token, {
       httpOnly: true,
       secure: process.env.ENVIRONMENT === 'development',
-      sameSite: 'none',
+      sameSite: 'lax',
       // maxAge: 24 * 60 * 60 * 1000,
       maxAge: constantValues.jwtExpiry,
     });
