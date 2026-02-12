@@ -12,6 +12,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose']
   });
+  app.useBodyParser('json', { limit: '100mb' }); // adjust as needed
   app.enableCors({
     origin: [
       "http://13.63.34.69",   // Vite frontend
