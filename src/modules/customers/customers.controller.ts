@@ -75,6 +75,7 @@ export class CustomersController {
     console.log('DTO:', dto);
 
     try {
+      console.log('Creating customer with DTO and files...');
       const result = await this.service.create(dto, files);
       console.log('Customer created successfully:', result.id);
       return result;
