@@ -60,10 +60,12 @@ export class LoanService {
 
     // 4️⃣ EMI Schedule
     const emiSchedule = generateEmiSchedule(
-      loanCalc.emi,
+      dto.loanAmount,
+      loanType.interestRate,
+      dto.loanDuration,
+      dto.collectionFreq,
       dto.firstEmiDate,
-      loanCalc.installments,
-      dto.collectionFreq
+      loanType.interestType
     );
 
     const disbursedAmount = calculateDisbursedAmount(
@@ -85,10 +87,10 @@ export class LoanService {
         processingFees: loanType.processingFees,
         insuranceFees: loanType.insuranceFees,
         otherFees: [...loanType.otherFees, ...dto.additionalFees],
-        totalInterest: Math.round(loanCalc.totalInterest *100)/100,
+        totalInterest: Math.round(loanCalc.totalInterest * 100) / 100,
         totalPayableAmount: Math.round(loanCalc.totalPayable * 100) / 100,
         disbursedAmount,
-        remainingAmount: Math.round(loanCalc.totalPayable * 100)/100,
+        remainingAmount: Math.round(loanCalc.totalPayable * 100) / 100,
         firstEmiDate: dto.firstEmiDate,
         repayments: emiSchedule,
         feesPaymentMethod: dto.feesPaymentMethod,
@@ -144,93 +146,94 @@ export class LoanService {
     loanId: string,
     managerId: string
   ) {
-    try{
-    // 1️⃣ Fetch loan with all required relations
-    const loan = await this.prisma.loanApplication.findUnique({
-      where: { id: loanId },
-      // include: {
-      //   customer: true,
-      //   loanType: true,
-      //   repayments: true,
-      // },
-    })
+    try {
+      // 1️⃣ Fetch loan with all required relations
+      const loan = await this.prisma.loanApplication.findUnique({
+        where: { id: loanId },
+        // include: {
+        //   customer: true,
+        //   loanType: true,
+        //   repayments: true,
+        // },
+      })
 
-    if (!loan) {
-      throw new NotFoundException('Loan application not found')
-    }
+      if (!loan) {
+        throw new NotFoundException('Loan application not found')
+      }
 
-    // 2️⃣ Status validation
-    if (loan.status !== LoanApplicationStatus.CALL_VERIFIED) {
-      throw new BadRequestException(
-        `Contract cannot be generated from status ${loan.status}`
+      // 2️⃣ Status validation
+      if (loan.status !== LoanApplicationStatus.CALL_VERIFIED) {
+        throw new BadRequestException(
+          `Contract cannot be generated from status ${loan.status}`
+        )
+      }
+
+      // 3️⃣ Prevent regeneration
+      if (loan.signedContractDocument) {
+        throw new BadRequestException(
+          'Contract already generated'
+        )
+      }
+      const customer = await this.prisma.customer.findUnique({
+        where: { id: loan.customerId },
+      });
+      if (!customer) {
+        throw new NotFoundException('Customer not found')
+      }
+
+      const loanType = await this.prisma.loanType.findUnique({
+        where: { id: loan.loanTypeId },
+      });
+      if (!loanType) {
+        throw new NotFoundException('Loan type not found')
+      }
+      // 4️⃣ Prepare contract data (FROZEN SNAPSHOT)
+      const contractData = {
+        contractNumber: `CTR-${loan.id.slice(-6).toUpperCase()}`,
+
+        customerName: customer.applicantName,
+        guardianName: customer.guardianName,
+        address: `${customer.village}, ${customer.district}, ${customer.pinCode}`,
+
+        loanType: loanType.loanName,
+        loanAmount: loan.loanAmount,
+        interestRate: loan.interestRate,
+        interestType: loan.interestType,
+        durationMonths: loan.loanDuration,
+
+        emiAmount: loan.repayments[0]?.emiAmount,
+        totalInterest: loan.totalInterest,
+        totalPayable: loan.totalPayableAmount,
+        disbursedAmount: loan.disbursedAmount,
+
+        firstEmiDate: loan.firstEmiDate.toISOString().split('T')[0],
+        collectionFrequency: loan.collectionFreq,
+
+        generatedAt: new Date().toISOString(),
+      }
+
+      // 5️⃣ Generate PDF
+      const pdfBuffer = await generateContractPdf(contractData)
+
+      // 6️⃣ Upload PDF to storage
+      const contractUrl = await uploadToStorage(
+        pdfBuffer,
+        `/loan-applications/${loan.id}/generated_contract.pdf`
       )
-    }
 
-    // 3️⃣ Prevent regeneration
-    if (loan.signedContractDocument) {
-      throw new BadRequestException(
-        'Contract already generated'
-      )
-    }
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: loan.customerId },
-    });
-    if (!customer) {
-      throw new NotFoundException('Customer not found')
-    }
-
-    const loanType = await this.prisma.loanType.findUnique({
-      where: { id: loan.loanTypeId },
-    });
-    if (!loanType) {
-      throw new NotFoundException('Loan type not found')
-    }
-    // 4️⃣ Prepare contract data (FROZEN SNAPSHOT)
-    const contractData = {
-      contractNumber: `CTR-${loan.id.slice(-6).toUpperCase()}`,
-
-      customerName: customer.applicantName,
-      guardianName: customer.guardianName,
-      address: `${customer.village}, ${customer.district}, ${customer.pinCode}`,
-
-      loanType: loanType.loanName,
-      loanAmount: loan.loanAmount,
-      interestRate: loan.interestRate,
-      interestType: loan.interestType,
-      durationMonths: loan.loanDuration,
-
-      emiAmount: loan.repayments[0]?.emiAmount,
-      totalInterest: loan.totalInterest,
-      totalPayable: loan.totalPayableAmount,
-      disbursedAmount: loan.disbursedAmount,
-
-      firstEmiDate: loan.firstEmiDate.toISOString().split('T')[0],
-      collectionFrequency: loan.collectionFreq,
-
-      generatedAt: new Date().toISOString(),
-    }
-
-    // 5️⃣ Generate PDF
-    const pdfBuffer = await generateContractPdf(contractData)
-
-    // 6️⃣ Upload PDF to storage
-    const contractUrl = await uploadToStorage(
-      pdfBuffer,
-      `/loan-applications/${loan.id}/generated_contract.pdf`
-    )
-
-    // 7️⃣ Update DB (IMMUTABLE RECORD)
-    return this.prisma.loanApplication.update({
-      where: { id: loanId },
-      data: {
-        contractDocument: {
-          url: contractUrl,
-          uploadedAt: new Date(),
-          uploadedById: managerId,
+      // 7️⃣ Update DB (IMMUTABLE RECORD)
+      return this.prisma.loanApplication.update({
+        where: { id: loanId },
+        data: {
+          contractDocument: {
+            url: contractUrl,
+            uploadedAt: new Date(),
+            uploadedById: managerId,
+          },
+          status: LoanApplicationStatus.CONTRACT_GENERATED,
         },
-        status: LoanApplicationStatus.CONTRACT_GENERATED,
-      },
-    })} catch (error) {
+      })
+    } catch (error) {
       console.error(`Failed to generate contract: ${error.message}`)
       throw new BadRequestException(`Failed to generate contract: ${error.message}`)
     }
@@ -632,7 +635,19 @@ export class LoanService {
     return loan;
   }
 
-  async payEmi(loanId: string, dto) {
+  async payEmi(loanId: string, dto, files: any) {
+
+    let proofUrl: string | null = null;
+
+    if (files?.proof?.[0]) {
+      const file = files.proof[0];
+
+      proofUrl = await uploadToStorage(
+        file.buffer,
+        `loan-repayments/${loanId}/emi-${dto.emiNumber}-proof`,
+        file.mimetype
+      );
+    }
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
     });
@@ -659,6 +674,11 @@ export class LoanService {
     // Update EMI
     emi.paidAmount += dto.paidAmount;
     emi.paidDate = new Date();
+
+    if (proofUrl) {
+      emi.proofUrl = proofUrl;
+    }
+
 
     if (emi.paidAmount >= emi.emiAmount) {
       emi.status = 'PAID';

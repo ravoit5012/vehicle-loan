@@ -54,6 +54,16 @@ enum Role {
   AGENT
 }
 
+
+type CustomerExtraDocument {
+  id          String
+  name        String
+  url         String
+  uploadedAt  DateTime
+}
+
+
+
 model Customer {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
@@ -118,6 +128,9 @@ model Customer {
 
   applicantSignatureUrl String
   personalPhotoUrl      String
+
+
+  extraDocuments CustomerExtraDocument[]
 
   // Account Information
   memberId String @unique
@@ -309,6 +322,9 @@ type RepaymentSnapshot {
   paidDate      DateTime?
   status        String
   transactionId String?
+  proofUrl      String? 
+  principalAmount Float     
+  interestAmount  Float     
 }
 
 model LoanApplication {

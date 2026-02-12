@@ -319,4 +319,73 @@ export class CustomersService {
       throw error;
     }
   }
+
+  async uploadExtraDocuments(customerId: string, files: any, body: any) {
+
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    const existingDocs = customer.extraDocuments || [];
+
+    if (!files?.documents || files.documents.length === 0) {
+      throw new BadRequestException('No files uploaded');
+    }
+
+    const documentNames = body.documentNames;
+
+    if (!documentNames || documentNames.length !== files.documents.length) {
+      throw new BadRequestException('Document names required for each file');
+    }
+
+    if (existingDocs.length + files.documents.length > 20) {
+      throw new BadRequestException('Maximum 20 documents allowed');
+    }
+
+    const uploadedDocs: any[] = [];
+
+    for (let i = 0; i < files.documents.length; i++) {
+
+      const file = files.documents[i];
+      const customName = documentNames[i];
+
+      // sanitize name (remove spaces & special chars)
+      const safeName = customName.replace(/[^a-zA-Z0-9]/g, "_");
+
+      const key = `customers/${customerId}/extra/${safeName}-${Date.now()}`;
+
+      const url = await uploadToStorage(
+        file.buffer,
+        key,
+        file.mimetype
+      );
+
+      uploadedDocs.push({
+        id: Date.now().toString() + i,
+        name: customName,
+        url,
+        uploadedAt: new Date(),
+      });
+    }
+
+    await this.prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        extraDocuments: {
+          set: [...existingDocs, ...uploadedDocs],
+        },
+      },
+    });
+
+    return {
+      message: 'Documents uploaded successfully',
+    };
+  }
+
+
+
 }

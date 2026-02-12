@@ -143,4 +143,20 @@ export class CustomersController {
   async deleteCustomer(@Param('id') id: string) {
     return this.service.deleteCustomer(id);
   }
+
+  @Post('upload-extra/:customerId')
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [{ name: 'documents', maxCount: 20 }],
+      { storage: memoryStorage() }
+    )
+  )
+  async uploadExtraDocuments(
+    @Param('customerId') customerId: string,
+    @UploadedFiles() files: any,
+    @Body() body: any,
+  ) {
+    return this.service.uploadExtraDocuments(customerId, files, body);
+  }
+
 }

@@ -6,6 +6,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth-guard';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 // import { Express } from 'express';
 import type { Express } from 'express';  // Import `Express` as a type
+import { memoryStorage } from 'multer';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 
 @Controller('loan')
@@ -170,14 +172,30 @@ export class LoanController {
     return this.loanService.getRepayments(loanId);
   }
 
+  // @UseGuards(JwtAuthGuard)
+  // @Post('repayment/pay/:loanId')
+  // async payEmi(
+  //   @Param('loanId') loanId: string,
+  //   @Body() dto: PayEmiDto,
+  // ) {
+  //   return this.loanService.payEmi(loanId, dto);
+  // }
   @UseGuards(JwtAuthGuard)
   @Post('repayment/pay/:loanId')
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [{ name: 'proof', maxCount: 1 }],
+      { storage: memoryStorage() }
+    )
+  )
   async payEmi(
     @Param('loanId') loanId: string,
+    @UploadedFiles() files: any,
     @Body() dto: PayEmiDto,
   ) {
-    return this.loanService.payEmi(loanId, dto);
+    return this.loanService.payEmi(loanId, dto, files);
   }
+  
 
   @UseGuards(JwtAuthGuard)
   @Post('repayment/penalty/:loanId')
