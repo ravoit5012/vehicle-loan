@@ -51,15 +51,39 @@ export class CustomersController {
       },
     ),
   )
-  async create(
-    @UploadedFiles() files: any,
-    @Body() dto: CreateCustomerDto,
-  ) {
+  // async create(
+  //   @UploadedFiles() files: any,
+  //   @Body() dto: CreateCustomerDto,
+  // ) {
+  //   try {
+  //     console.log("Customer Creation Request Recieved");
+  //     return this.service.create(dto, files);
+  //   } catch (error) { console.error("Error creating customer:", error); throw error; }
+  // }
+  async create(dto: CreateCustomerDto, files: any) {
+    console.log('Files received:', Object.keys(files));
+    Object.entries(files).forEach(([key, value]) => {
+      const fileArray = value as Express.Multer.File[] | undefined;
+      if (fileArray && fileArray.length > 0) {
+        console.log(`${key}: size=${fileArray[0].size} mimetype=${fileArray[0].mimetype}`);
+      } else {
+        console.log(`${key}: no file uploaded`);
+      }
+    });
+
+
+    console.log('DTO:', dto);
+
     try {
-      console.log("Customer Creation Request Recieved");
-      return this.service.create(dto, files);
-    } catch (error) { console.error("Error creating customer:", error); throw error; }
+      const result = await this.service.create(dto, files);
+      console.log('Customer created successfully:', result.id);
+      return result;
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      throw error;
+    }
   }
+
 
 
   @UseGuards(JwtAuthGuard, RolesGuard)
