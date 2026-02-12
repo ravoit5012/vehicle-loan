@@ -110,6 +110,13 @@ export class CustomersController {
         { name: 'poaBackImage', maxCount: 1 },
         { name: 'applicantSignature', maxCount: 1 },
         { name: 'personalPhoto', maxCount: 1 },
+        { name: 'nomineePanImage', maxCount: 1 },
+        { name: 'nomineePoiFrontImage', maxCount: 1 },
+        { name: 'nomineePoiBackImage', maxCount: 1 },
+        { name: 'nomineePoaFrontImage', maxCount: 1 },
+        { name: 'nomineePoaBackImage', maxCount: 1 },
+        { name: 'nomineeSignature', maxCount: 1 },
+        { name: 'nomineePersonalPhoto', maxCount: 1 },
       ],
       {
         storage: diskStorage({

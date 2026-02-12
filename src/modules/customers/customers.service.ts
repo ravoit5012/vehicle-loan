@@ -197,17 +197,51 @@ export class CustomersService {
 
       const { memberId, managerId, agentId, ...updatableData } = dto || {};
 
+      const overwriteIfExists = async (field: string, fileName: string) => {
+        if (!files?.[field]?.[0]) return;
 
-      // Handle files if provided
-      if (files) {
-        if (files.panImage) updatableData['panImageUrl'] = `/files/${files.panImage[0].filename}`;
-        if (files.poiFrontImage) updatableData['poiFrontImageUrl'] = `/files/${files.poiFrontImage[0].filename}`;
-        if (files.poiBackImage) updatableData['poiBackImageUrl'] = `/files/${files.poiBackImage[0].filename}`;
-        if (files.poaFrontImage) updatableData['poaFrontImageUrl'] = `/files/${files.poaFrontImage[0].filename}`;
-        if (files.poaBackImage) updatableData['poaBackImageUrl'] = `/files/${files.poaBackImage[0].filename}`;
-        if (files.applicantSignature) updatableData['applicantSignatureUrl'] = `/files/${files.applicantSignature[0].filename}`;
-        if (files.personalPhoto) updatableData['personalPhotoUrl'] = `/files/${files.personalPhoto[0].filename}`;
-      }
+        const file = files[field][0];
+
+        await uploadToStorage(
+          file.buffer,
+          `customers/${existingCustomer.applicantName}-${existingCustomer.mobileNumber}/${fileName}${extname(file.originalname)}`,
+          file.mimetype
+        );
+      };
+
+      await overwriteIfExists('panImage', 'pan');
+      await overwriteIfExists('poiFrontImage', 'poiFrontImage');
+      await overwriteIfExists('poiBackImage', 'poiBackImage');
+      await overwriteIfExists('poaFrontImage', 'poaFrontImage');
+      await overwriteIfExists('poaBackImage', 'poaBackImage');
+      await overwriteIfExists('applicantSignature', 'signature');
+      await overwriteIfExists('personalPhoto', 'photo');
+
+      await overwriteIfExists('nomineePanImage', 'nomineePan');
+      await overwriteIfExists('nomineePoiFrontImage', 'nomineePoiFront');
+      await overwriteIfExists('nomineePoiBackImage', 'nomineePoiBack');
+      await overwriteIfExists('nomineePoaFrontImage', 'nomineePoaFront');
+      await overwriteIfExists('nomineePoaBackImage', 'nomineePoaBack');
+      await overwriteIfExists('nomineeSignature', 'nomineeSignature');
+      await overwriteIfExists('nomineePersonalPhoto', 'nomineePhoto');
+
+
+      // if (panImageUrl) updatableData.panImageUrl = panImageUrl;
+      // if (poiFrontImageUrl) updatableData.poiFrontImageUrl = poiFrontImageUrl;
+      // if (poiBackImageUrl) updatableData.poiBackImageUrl = poiBackImageUrl;
+      // if (poaFrontImageUrl) updatableData.poaFrontImageUrl = poaFrontImageUrl;
+      // if (poaBackImageUrl) updatableData.poaBackImageUrl = poaBackImageUrl;
+      // if (applicantSignatureUrl) updatableData.applicantSignatureUrl = applicantSignatureUrl;
+      // if (personalPhotoUrl) updatableData.personalPhotoUrl = personalPhotoUrl;
+
+      // if (nomineePanImageUrl) updatableData.nomineePanImageUrl = nomineePanImageUrl;
+      // if (nomineePoiFrontImageUrl) updatableData.nomineePoiFrontImageUrl = nomineePoiFrontImageUrl;
+      // if (nomineePoiBackImageUrl) updatableData.nomineePoiBackImageUrl = nomineePoiBackImageUrl;
+      // if (nomineePoaFrontImageUrl) updatableData.nomineePoaFrontImageUrl = nomineePoaFrontImageUrl;
+      // if (nomineePoaBackImageUrl) updatableData.nomineePoaBackImageUrl = nomineePoaBackImageUrl;
+      // if (nomineeSignatureUrl) updatableData.nomineeSignatureUrl = nomineeSignatureUrl;
+      // if (nomineePersonalPhotoUrl) updatableData.nomineePersonalPhotoUrl = nomineePersonalPhotoUrl;
+
 
       // Handle password hashing if password is being updated
       if (updatableData.password) {
