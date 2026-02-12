@@ -14,10 +14,8 @@ async function bootstrap() {
   });
   app.enableCors({
     origin: [
-      "http://localhost:5173",   // Vite frontend
+      "http://13.63.34.69",   // Vite frontend
       "http://localhost:3000",   // Next.js frontend
-      "http://localhost:3001",   // Next.js frontend
-      "*",
     ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
