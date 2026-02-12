@@ -55,8 +55,10 @@ export class CustomersController {
     @UploadedFiles() files: any,
     @Body() dto: CreateCustomerDto,
   ) {
-    console.log("Customer Creation Request Recieved");
-    return this.service.create(dto, files);
+    try {
+      console.log("Customer Creation Request Recieved");
+      return this.service.create(dto, files);
+    } catch (error) { console.error("Error creating customer:", error); throw error; }
   }
 
 
