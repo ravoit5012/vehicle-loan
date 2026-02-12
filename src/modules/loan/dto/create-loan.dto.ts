@@ -89,13 +89,24 @@ export class CompleteFeePaymentDto {
 }
 
 export class PayEmiDto {
+    @IsNumber()
     emiNumber: number;
+
+    @IsNumber()
     paidAmount: number;
+
+    @IsString()
     paymentMethod: string;
+
+    @IsString()
     transactionId: string;
 }
 
 export class AddPenaltyDto {
-  emiNumber: number;
-  penaltyAmount: number;
+
+    @IsNumber()
+    emiNumber: number;
+
+    @IsNumber()
+    penaltyAmount: number;
 }
