@@ -12,7 +12,9 @@ export async function generateContractPdf(data: any): Promise<Buffer> {
     const content = template(data);
 
     const browser = await puppeteer.launch({
-        headless: true,  // Set to true or false based on your need
+        executablePath: "/usr/bin/chromium-browser", // or /usr/bin/chromium
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        headless: true
     });
 
     const page = await browser.newPage();
