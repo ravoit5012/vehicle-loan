@@ -21,6 +21,7 @@ import { Role } from 'src/common/enums/role.enum';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/role-guard';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { UploadExtraDocumentsDto } from './dto/create-customer.dto';
 import constants from 'constants';
 
 @Controller('customers')
@@ -144,7 +145,7 @@ export class CustomersController {
     return this.service.deleteCustomer(id);
   }
 
-  @Post('upload-extra/:customerId')
+  @Post('/upload-extra/:customerId')
   @UseInterceptors(
     FileFieldsInterceptor(
       [{ name: 'documents', maxCount: 20 }],
@@ -153,10 +154,11 @@ export class CustomersController {
   )
   async uploadExtraDocuments(
     @Param('customerId') customerId: string,
+    @Body() dto: UploadExtraDocumentsDto,
     @UploadedFiles() files: any,
-    @Body() body: any,
   ) {
-    return this.service.uploadExtraDocuments(customerId, files, body);
+    return this.service.uploadExtraDocuments(customerId, dto, files);
   }
+
 
 }

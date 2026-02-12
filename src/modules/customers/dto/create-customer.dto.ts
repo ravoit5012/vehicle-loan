@@ -3,7 +3,9 @@ import {
   IsEmail,
   IsEnum,
   IsOptional,
+  IsArray,
   IsDateString,
+  ArrayNotEmpty,
 } from 'class-validator'
 import {
   RelationType,
@@ -15,7 +17,7 @@ import {
   POADocumentType,
   AccountStatus,
 } from '@prisma/client'
-
+import { Transform } from 'class-transformer'
 export class CreateCustomerDto {
   // Personal
   @IsString()
@@ -194,4 +196,22 @@ export class CreateCustomerDto {
 
   @IsOptional()
   updatedAt?: Date;
+}
+
+
+export class UploadExtraDocumentsDto {
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    // Important: when only 1 document is sent,
+    // Nest receives string instead of array.
+    // This converts it safely to array.
+    if (!Array.isArray(value)) {
+      return [value];
+    }
+    return value;
+  })
+  documentNames: string[];
 }
