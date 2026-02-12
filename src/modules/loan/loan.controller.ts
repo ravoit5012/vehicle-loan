@@ -48,8 +48,12 @@ export class LoanController {
     @Param('id') loanId: string,
     @Req() req: any
   ) {
-    const managerId = req.user.id;
-    return this.loanService.generateContract(loanId, managerId);
+    try {
+      const managerId = req.user.id;
+      return this.loanService.generateContract(loanId, managerId);
+    } catch (error) {
+      throw new BadRequestException(`Failed to generate contract: ${error.message}`);
+    }
   }
 
   @UseGuards(JwtAuthGuard)
