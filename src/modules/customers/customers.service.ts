@@ -23,34 +23,34 @@ export class CustomersService {
         files.panImage[0].mimetype
       );
       const poiFrontImageUrl = await uploadToStorage(
-        files.panImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/poiFrontImage${extname(files.panImage[0].originalname)}`,
-        files.panImage[0].mimetype
+        files.poiFrontImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/poiFrontImage${extname(files.poiFrontImage[0].originalname)}`,
+        files.poiFrontImage[0].mimetype
       );
       const poiBackImageUrl = await uploadToStorage(
-        files.panImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/poiBackImage${extname(files.panImage[0].originalname)}`,
-        files.panImage[0].mimetype
+        files.poiBackImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/poiBackImage${extname(files.poiBackImage[0].originalname)}`,
+        files.poiBackImage[0].mimetype
       );
       const poaFrontImageUrl = await uploadToStorage(
-        files.panImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/poaFrontImage${extname(files.panImage[0].originalname)}`,
-        files.panImage[0].mimetype
+        files.poaFrontImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/poaFrontImage${extname(files.poaFrontImage[0].originalname)}`,
+        files.poaFrontImage[0].mimetype
       );
       const poaBackImageUrl = await uploadToStorage(
-        files.panImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/poaBackImage${extname(files.panImage[0].originalname)}`,
-        files.panImage[0].mimetype
+        files.poaBackImage[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/poaBackImage${extname(files.poaBackImage[0].originalname)}`,
+        files.poaBackImage[0].mimetype
       );
       const applicantSignatureUrl = await uploadToStorage(
-        files.panImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/signature${extname(files.panImage[0].originalname)}`,
-        files.panImage[0].mimetype
+        files.applicantSignature[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/signature${extname(files.applicantSignature[0].originalname)}`,
+        files.applicantSignature[0].mimetype
       );
       const personalPhotoUrl = await uploadToStorage(
-        files.panImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/photo${extname(files.panImage[0].originalname)}`,
-        files.panImage[0].mimetype
+        files.personalPhoto[0].buffer,
+        `customers/${dto.applicantName}-${dto.mobileNumber}/photo${extname(files.personalPhoto[0].originalname)}`,
+        files.personalPhoto[0].mimetype
       );
       const nomineePanImageUrl = await uploadToStorage(
         files.nomineePanImage[0].buffer,
