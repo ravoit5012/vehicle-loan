@@ -149,20 +149,7 @@ export class CustomersService {
   }
 
   async findAll(user: { id: string; role: string }) {
-    const whereCondition: any = {};
-
-    if (user.role === 'MANAGER') {
-      whereCondition.managerId = user.id;
-    }
-
-    if (user.role === 'AGENT') {
-      whereCondition.agentId = user.id;
-    }
-
-    // ADMIN → no where condition (gets all customers)
-
     return this.prisma.customer.findMany({
-      where: whereCondition,
       select: {
         id: true,
         applicantName: true,

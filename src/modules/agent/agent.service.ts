@@ -18,9 +18,19 @@ export class AgentService {
       throw new BadRequestException('Invalid managerId');
     }
 
+    const existingPhone = await this.prisma.agent.findUnique({
+      where: { phoneNumber: dto.phoneNumber },
+    });
+    if (existingPhone) {
+      throw new BadRequestException('Phone number already in use by another agent');
+    }
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     try {
+      if (!dto.status) {
+        dto.status = 'ACTIVE';
+      }
+
       const agent = await this.prisma.agent.create({
         data: {
           ...dto,
@@ -33,6 +43,7 @@ export class AgentService {
         agent,
       };
     } catch (err) {
+      console.error('Error creating agent:', err);
       throw new BadRequestException(err.message);
     }
   }

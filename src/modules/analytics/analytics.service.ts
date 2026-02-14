@@ -11,11 +11,19 @@ export class AnalyticsService {
   countAllLoans() {
     return this.prisma.loanApplication.count();
   }
+  countAllLoanTypes() {
+    return this.prisma.loanType.count();
+  }
 
   countApprovedLoans() {
     return this.prisma.loanApplication.count({
       where: {
-        status: LoanApplicationStatus.ADMIN_APPROVED || LoanApplicationStatus.DISBURSED,
+        status: {
+          in: [
+            LoanApplicationStatus.ADMIN_APPROVED,
+            LoanApplicationStatus.DISBURSED,
+          ],
+        },
       }
     });
   }
@@ -34,7 +42,12 @@ export class AnalyticsService {
           loanAmount: true,
         },
         where: {
-          status: LoanApplicationStatus.ADMIN_APPROVED || LoanApplicationStatus.DISBURSED,
+          status: {
+            in: [
+              LoanApplicationStatus.ADMIN_APPROVED,
+              LoanApplicationStatus.DISBURSED,
+            ],
+          },
         }
       }
     );
@@ -46,7 +59,12 @@ export class AnalyticsService {
       {
         _sum: { totalInterest: true },
         where: {
-          status: LoanApplicationStatus.ADMIN_APPROVED || LoanApplicationStatus.DISBURSED,
+          status: {
+            in: [
+              LoanApplicationStatus.ADMIN_APPROVED,
+              LoanApplicationStatus.DISBURSED,
+            ],
+          },
         }
       }
     );
@@ -59,13 +77,17 @@ export class AnalyticsService {
         repayments: true,
       },
       where: {
-        status: LoanApplicationStatus.ADMIN_APPROVED || LoanApplicationStatus.DISBURSED,
+        status: {
+            in: [
+              LoanApplicationStatus.ADMIN_APPROVED,
+              LoanApplicationStatus.DISBURSED,
+            ],
+          },
       }
     });
 
     return loans.reduce((loanAcc, loan) => {
       const loanTotal = (loan.repayments || [])
-        .filter(rep => rep.status === 'PAID')
         .reduce((repAcc, rep) => repAcc + (rep.paidAmount ?? 0), 0);
 
       return loanAcc + loanTotal;
@@ -80,7 +102,12 @@ export class AnalyticsService {
           remainingAmount: true,
         },
         where: {
-          status: LoanApplicationStatus.ADMIN_APPROVED || LoanApplicationStatus.DISBURSED,
+          status: {
+            in: [
+              LoanApplicationStatus.ADMIN_APPROVED,
+              LoanApplicationStatus.DISBURSED,
+            ],
+          },
         }
       }
     );
@@ -92,7 +119,12 @@ export class AnalyticsService {
       {
         _sum: { totalPayableAmount: true, },
         where: {
-          status: LoanApplicationStatus.ADMIN_APPROVED || LoanApplicationStatus.DISBURSED,
+          status: {
+            in: [
+              LoanApplicationStatus.ADMIN_APPROVED,
+              LoanApplicationStatus.DISBURSED,
+            ],
+          },
         }
       });
     return result._sum.totalPayableAmount || 0;

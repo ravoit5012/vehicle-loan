@@ -369,40 +369,79 @@ export class LoanService {
 
   async adminApproveLoan(
     loanId: string,
-    adminId: string
+    adminId: string,
+    remark: string
   ) {
-    try {
-      const admin = await this.prisma.admin.findUnique({
-        where: { id: adminId },
-      });
-      if (!admin) {
-        throw new NotFoundException('Admin not found');
-      }
-      const loan = await this.prisma.loanApplication.findUnique({
-        where: { id: loanId },
-      });
-      if (!loan) {
-        throw new NotFoundException('Loan application not found');
-      }
-      if (loan.status !== LoanApplicationStatus.FIELD_VERIFIED) {
-        throw new BadRequestException(
-          `Loan cannot be admin-approved from status ${loan.status}`
-        );
-      }
-      await this.prisma.loanApplication.update({
-        where: { id: loanId },
-        data: {
-          status: LoanApplicationStatus.ADMIN_APPROVED,
-          approvedAt: new Date(Date.now()),
-        },
-      });
-      return {
-        success: true,
-        message: "Loan application approved by admin successfully"
-      }
-    } catch (error) {
-      throw new BadRequestException(error.message);
+    const admin = await this.prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      throw new NotFoundException('Admin not found');
     }
+
+    const loan = await this.prisma.loanApplication.findUnique({
+      where: { id: loanId },
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan application not found');
+    }
+
+    if (loan.status !== LoanApplicationStatus.FIELD_VERIFIED) {
+      throw new BadRequestException(
+        `Loan cannot be admin-approved from status ${loan.status}`
+      );
+    }
+
+    await this.prisma.loanApplication.update({
+      where: { id: loanId },
+      data: {
+        status: LoanApplicationStatus.ADMIN_APPROVED,
+        approvedAt: new Date(),
+        remark: remark || "NO REMARK PROVIDED",
+      },
+    });
+
+    return {
+      success: true,
+      message: "Loan application approved by admin successfully",
+    };
+  }
+
+  async rejectLoan(
+    loanId: string,
+    remark: string
+  ) {
+    const loan = await this.prisma.loanApplication.findUnique({
+      where: { id: loanId },
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan application not found');
+    }
+
+    if (
+      loan.status === LoanApplicationStatus.DISBURSED ||
+      loan.status === LoanApplicationStatus.CLOSED
+    ) {
+      throw new BadRequestException(
+        `Disbursed or closed loans cannot be rejected`
+      );
+    }
+
+    await this.prisma.loanApplication.update({
+      where: { id: loanId },
+      data: {
+        status: LoanApplicationStatus.REJECTED,
+        remark: remark || "NO REMARK PROVIDED",
+      },
+    });
+
+    return {
+      success: true,
+      message: "Loan application rejected successfully",
+    };
   }
 
   async disburseLoan(
@@ -481,38 +520,7 @@ export class LoanService {
     }
   }
 
-  async rejectLoan(
-    loanId: string,
-    rejectionRemarks: string
-  ) {
-    try {
-      const loan = await this.prisma.loanApplication.findUnique({
-        where: { id: loanId },
-      });
-      if (!loan) {
-        throw new NotFoundException('Loan application not found');
-      }
-      if (loan.status === LoanApplicationStatus.DISBURSED || loan.status === LoanApplicationStatus.CLOSED) {
-        throw new BadRequestException(
-          `Disbursed or closed loans cannot be rejected`
-        );
-      }
-      const remark = rejectionRemarks ? rejectionRemarks : "NO REMARK PROVIDED";
-      await this.prisma.loanApplication.update({
-        where: { id: loanId },
-        data: {
-          status: LoanApplicationStatus.REJECTED,
-          rejectionRemark: remark,
-        },
-      });
-      return {
-        success: true,
-        message: "Loan application rejected successfully"
-      }
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
+
 
   async closeLoan(
     loanId: string

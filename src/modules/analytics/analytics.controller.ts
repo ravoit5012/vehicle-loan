@@ -11,6 +11,10 @@ export class AnalyticsController {
   findAll() {
     return this.analyticsService.countAllLoans();
   }
+  @Get('/all-loan-type-count')
+  findAllLoanTypes() {
+    return this.analyticsService.countAllLoanTypes();
+  }
   @Get('/all-approved-loan-count')
   findAllApproved() {
     return this.analyticsService.countApprovedLoans();

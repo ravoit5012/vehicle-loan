@@ -90,15 +90,32 @@ export class LoanController {
     });
   }
 
+@UseGuards(JwtAuthGuard)
+@Post('/admin-approve/id/:id')
+async adminApproveLoan(
+  @Param('id') loanId: string,
+  @Req() req: any,
+  @Body('remark') remark: string
+) {
+  const adminId = req.user.id;
+  return this.loanService.adminApproveLoan(
+    loanId,
+    adminId,
+    remark
+  );
+}
+
+
   @UseGuards(JwtAuthGuard)
-  @Post('/admin-approve/id/:id')
-  async adminApproveLoan(
+  @Post('/reject/id/:id')
+  async rejectLoan(
     @Param('id') loanId: string,
-    @Req() req: any
+    @Req() req: any,
+    @Body('remark') remark: string
   ) {
-    const adminId = req.user.id;
-    return this.loanService.adminApproveLoan(loanId, adminId);
+    return this.loanService.rejectLoan(loanId, remark);
   }
+
 
   @UseGuards(JwtAuthGuard)
   @Post('/disburse/id/:id')
@@ -109,18 +126,6 @@ export class LoanController {
     return this.loanService.disburseLoan(loanId);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post('/reject/id/:id')
-  async rejectLoan(
-    @Param('id') loanId: string,
-    @Req() req: any
-  ) {
-    const adminId = req.user.id;
-    return this.loanService.rejectLoan(
-      loanId,
-      req.body.rejectionRemarks
-    );
-  }
 
   @UseGuards(JwtAuthGuard)
   @Post('/close/id/:id')
@@ -172,14 +177,6 @@ export class LoanController {
     return this.loanService.getRepayments(loanId);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Post('repayment/pay/:loanId')
-  // async payEmi(
-  //   @Param('loanId') loanId: string,
-  //   @Body() dto: PayEmiDto,
-  // ) {
-  //   return this.loanService.payEmi(loanId, dto);
-  // }
   @UseGuards(JwtAuthGuard)
   @Post('repayment/pay/:loanId')
   @UseInterceptors(
@@ -195,7 +192,7 @@ export class LoanController {
   ) {
     return this.loanService.payEmi(loanId, dto, files);
   }
-  
+
 
   @UseGuards(JwtAuthGuard)
   @Post('repayment/penalty/:loanId')

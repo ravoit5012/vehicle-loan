@@ -38,7 +38,7 @@ model Agent {
   phoneNumber String   @unique
   username    String   @unique
   password    String
-  status      AccountStatus @default(ACTIVE)
+  status      AccountStatus @default(INACTIVE)
   address     String
   city        String
   pincode     String
@@ -338,7 +338,7 @@ model LoanApplication {
  
   // Status & Lifecycle
   status LoanApplicationStatus @default(DRAFT)
-  rejectionRemark   String?
+  remark   String?
 
   submittedAt        DateTime?
   callVerifiedAt     DateTime?
