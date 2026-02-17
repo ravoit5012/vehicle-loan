@@ -13,7 +13,7 @@ export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -28,7 +28,7 @@ export class JwtAuthGuard implements CanActivate {
         secret: constantValues.jwtSecret,
       });
 
-      const { sub, role } = payload;
+      const { sub, role, tokenVersion } = payload;
 
       let user: any;
 
@@ -55,8 +55,8 @@ export class JwtAuthGuard implements CanActivate {
           throw new UnauthorizedException('Invalid role');
       }
 
-      if (!user) {
-        throw new UnauthorizedException('User not found');
+      if (!user || user.tokenVersion !== tokenVersion) {
+        throw new UnauthorizedException('Session expired');
       }
 
       // Attach full user object + role

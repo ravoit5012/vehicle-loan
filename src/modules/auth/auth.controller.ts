@@ -5,10 +5,12 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth-guard';
 import { AuthService } from './auth.service';
 import { Role } from 'src/common/enums/role.enum';
 import { constantValues } from 'src/common/constants';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService, private prisma: PrismaService) { }
+
 
   @Post('login')
   async login(
@@ -17,6 +19,7 @@ export class AuthController {
   ) {
     const { username, password, role } = body;
 
+   
     const { token, user } = await this.authService.login(
       username,
       password,

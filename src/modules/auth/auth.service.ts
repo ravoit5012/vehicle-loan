@@ -42,28 +42,76 @@ export class AuthService {
   // }
 
   // auth.service.ts
-async login(username: string, password: string, role: Role) {
-  const user = await this.validateUser(username, password, role);
+  // async login(username: string, password: string, role: Role) {
+  //   const user = await this.validateUser(username, password, role);
 
-  const payload = {
-    sub: user.id,
-    username: user.username,
-    role: role,
-  };
+  //   const payload = {
+  //     sub: user.id,
+  //     username: user.username,
+  //     role: role,
+  //   };
 
-  const token = this.jwtService.sign(payload, {
-    secret: constantValues.jwtSecret,
-    expiresIn: constantValues.jwtExpiry,
-  });
+  //   const token = this.jwtService.sign(payload, {
+  //     secret: constantValues.jwtSecret,
+  //     expiresIn: constantValues.jwtExpiry,
+  //   });
 
-  // IMPORTANT: never return password
-  const { password: _, ...safeUser } = user;
+  //   // IMPORTANT: never return password
+  //   const { password: _, ...safeUser } = user;
 
-  return {
-    token,
-    user: safeUser,
-  };
-}
+  //   return {
+  //     token,
+  //     user: safeUser,
+  //   };
+  // }
+
+
+  async login(username: string, password: string, role: Role) {
+    const user = await this.validateUser(username, password, role);
+
+    let updatedUser;
+
+    switch (role) {
+      case Role.MANAGER:
+        updatedUser = await this.prisma.manager.update({
+          where: { id: user.id },
+          data: { tokenVersion: { increment: 1 } },
+        });
+        break;
+
+      case Role.ADMIN:
+        updatedUser = await this.prisma.admin.update({
+          where: { id: user.id },
+          data: { tokenVersion: { increment: 1 } },
+        });
+        break;
+
+      case Role.AGENT:
+        updatedUser = await this.prisma.agent.update({
+          where: { id: user.id },
+          data: { tokenVersion: { increment: 1 } },
+        });
+        break;
+    }
+
+    // 🔥 Use updatedUser here, NOT old user
+    const payload = {
+      sub: updatedUser.id,
+      username: updatedUser.username,
+      role,
+      tokenVersion: updatedUser.tokenVersion,
+    };
+
+    const token = this.jwtService.sign(payload, {
+      secret: constantValues.jwtSecret,
+      expiresIn: constantValues.jwtExpiry,
+    });
+
+    const { password: _, ...safeUser } = updatedUser;
+
+    return { token, user: safeUser };
+  }
+
 
 
 }

@@ -19,6 +19,7 @@ model Manager {
   address     String
   city        String
   pincode     String 
+  tokenVersion  Int     @default(0)
   createdAt   DateTime  @default(now())
 }
 
@@ -27,6 +28,7 @@ model Admin {
   name      String
   username  String   @unique
   password  String
+  tokenVersion  Int     @default(0)
   createdAt DateTime @default(now())
 }
 
@@ -42,6 +44,7 @@ model Agent {
   address     String
   city        String
   pincode     String
+  tokenVersion  Int     @default(0)
   createdAt   DateTime @default(now())
 
   managerId   String   @db.ObjectId
