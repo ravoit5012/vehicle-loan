@@ -13,6 +13,8 @@ import { AgentModule } from './modules/agent/agent.module';
 import { LoanTypesModule } from './modules/loan-types/loan-types.module';
 import { LoanModule } from './modules/loan/loan.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { RedisModule } from './redis/redis.module';
+import { CompanySettingsModule } from './modules/company-settings/company-settings.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -29,6 +31,8 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     LoanTypesModule,
     LoanModule,
     AnalyticsModule,
+    RedisModule,
+    CompanySettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

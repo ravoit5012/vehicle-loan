@@ -17,27 +17,31 @@ export class AuthController {
     @Body() body: { username: string; password: string; role: Role },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { username, password, role } = body;
+    try {
+      const { username, password, role } = body;
 
-   
-    const { token, user } = await this.authService.login(
-      username,
-      password,
-      role,
-    );
 
-    res.cookie('loginToken', token, {
-      httpOnly: true,
-      secure: process.env.ENVIRONMENT === 'development',
-      sameSite: 'lax',
-      // maxAge: 24 * 60 * 60 * 1000,
-      maxAge: constantValues.jwtExpiry,
-    });
+      const { token, user } = await this.authService.login(
+        username,
+        password,
+        role,
+      );
 
-    return {
-      message: 'Logged in successfully',
-      user,
-    };
+      res.cookie('loginToken', token, {
+        httpOnly: true,
+        secure: process.env.ENVIRONMENT === 'development',
+        sameSite: 'lax',
+        // maxAge: 24 * 60 * 60 * 1000,
+        maxAge: constantValues.jwtExpiry,
+      });
+
+      return {
+        message: 'Logged in successfully',
+        user,
+      };
+    } catch (error) {
+        console.log('Login Controller error:', error);
+    }
   }
 
 
