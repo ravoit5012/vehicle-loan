@@ -42,5 +42,15 @@ export class AnalyticsController {
   @Get('/total-repayable-amount')
   totalRepayableAmount() {
     return this.analyticsService.totalRepayableAmount();
-  } 
+  }
+
+  @Get('/manager-analytics')
+  getManagerAnalytics() {
+    return this.analyticsService.getManagerAnalytics();
+  }
+
+  @Get('/agent-analytics')
+  getAgentAnalytics() {
+    return this.analyticsService.getAgentAnalytics();
+  }
 }

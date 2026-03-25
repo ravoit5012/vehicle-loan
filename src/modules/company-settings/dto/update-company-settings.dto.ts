@@ -20,4 +20,8 @@ export class UpdateCompanySettingsDto {
   @IsOptional()
   @IsString()
   panNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  logoUrl?: string;
 }

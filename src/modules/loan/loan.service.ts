@@ -5,7 +5,7 @@ import { FeesPaymentMethod } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { calculateTotalFees, calculateFlatLoan, calculateReducingLoan, generateEmiSchedule, calculateDisbursedAmount } from 'src/utils/emi/getPeriodsPerYear';
 import { LoanApplicationStatus } from 'src/common/enums/loan-application-status.enum';
-import { generateContractPdf } from 'src/utils/generateContractPdf';
+import { generateContractPdf } from 'src/utils/pdf/generateContract';
 import { uploadToStorage } from 'src/utils/uploadToStorage';
 import { CustomersService } from '../customers/customers.service';
 @Injectable()
@@ -150,12 +150,8 @@ export class LoanService {
       // 1️⃣ Fetch loan with all required relations
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId },
-        // include: {
-        //   customer: true,
-        //   loanType: true,
-        //   repayments: true,
-        // },
       })
+
 
       if (!loan) {
         throw new NotFoundException('Loan application not found')
@@ -180,6 +176,9 @@ export class LoanService {
       if (!customer) {
         throw new NotFoundException('Customer not found')
       }
+      if (!customer.managerId || !customer.agentId) {
+        throw new BadRequestException('Malfunctioned Customer')
+      }
 
       const loanType = await this.prisma.loanType.findUnique({
         where: { id: loan.loanTypeId },
@@ -187,30 +186,114 @@ export class LoanService {
       if (!loanType) {
         throw new NotFoundException('Loan type not found')
       }
+
+      const [manager, agent, company] = await Promise.all([
+        this.prisma.manager.findUnique({ where: { id: customer.managerId } }),
+        this.prisma.agent.findUnique({ where: { id: customer.agentId } }),
+        this.prisma.companySettings.findFirst()
+      ]);
+      if (!company) console.log("Company missing");
+      if (!manager) console.log("Manager missing");
+      if (!agent) console.log("Agent missing");
+      if (!manager || !agent || !company) {
+        throw new NotFoundException('Manager, Agent, or Company not found')
+      }
       // 4️⃣ Prepare contract data (FROZEN SNAPSHOT)
       const contractData = {
         contractNumber: `CTR-${loan.id.slice(-6).toUpperCase()}`,
+        generatedAt: new Date(),
 
-        customerName: customer.applicantName,
-        guardianName: customer.guardianName,
-        address: `${customer.village}, ${customer.district}, ${customer.pinCode}`,
+        company: {
+          name: company.companyName,
+          email: company.companyEmail,
+          phone: company.companyPhone,
+          address: company.companyAddress,
+          pan: company.panNumber,
+        },
 
-        loanType: loanType.loanName,
-        loanAmount: loan.loanAmount,
-        interestRate: loan.interestRate,
-        interestType: loan.interestType,
-        durationMonths: loan.loanDuration,
+        manager: {
+          name: manager.name,
+          phone: manager.phoneNumber,
+        },
 
-        emiAmount: loan.repayments[0]?.emiAmount,
-        totalInterest: loan.totalInterest,
-        totalPayable: loan.totalPayableAmount,
-        disbursedAmount: loan.disbursedAmount,
+        agent: {
+          name: agent.name,
+          phone: agent.phoneNumber,
+        },
 
-        firstEmiDate: loan.firstEmiDate.toISOString().split('T')[0],
-        collectionFrequency: loan.collectionFreq,
+        customer: {
+          applicantName: customer.applicantName,
+          guardianName: customer.guardianName,
+          relationType: customer.relationType,
+          mobileNumber: customer.mobileNumber,
+          email: customer.email,
+          gender: customer.gender,
+          dob: customer.dateOfBirth,
 
-        generatedAt: new Date().toISOString(),
-      }
+          address: {
+            village: customer.village,
+            district: customer.district,
+            pinCode: customer.pinCode,
+          },
+
+          photo: customer.personalPhotoUrl,
+          signature: customer.applicantSignatureUrl,
+
+          documents: {
+            pan: customer.panImageUrl,
+            poiFront: customer.poiFrontImageUrl,
+            poiBack: customer.poiBackImageUrl,
+            poaFront: customer.poaFrontImageUrl,
+            poaBack: customer.poaBackImageUrl,
+          },
+        },
+
+        nominee: {
+          name: customer.nomineeName,
+          relation: customer.nomineeRelation,
+          mobile: customer.nomineeMobileNumber,
+
+          address: {
+            village: customer.nomineeVillage,
+            district: customer.nomineeDistrict,
+            pinCode: customer.nomineePinCode,
+          },
+
+          photo: customer.nomineePersonalPhotoUrl,
+          signature: customer.nomineeSignatureUrl,
+
+          documents: {
+            pan: customer.nomineePanImageUrl,
+            poiFront: customer.nomineePoiFrontImageUrl,
+            poiBack: customer.nomineePoiBackImageUrl,
+            poaFront: customer.nomineePoaFrontImageUrl,
+            poaBack: customer.nomineePoaBackImageUrl,
+          },
+        },
+
+        loan: {
+          loanType: loanType.loanName,
+          amount: loan.loanAmount,
+          interestRate: loan.interestRate,
+          interestType: loan.interestType,
+          duration: loan.loanDuration,
+
+          totalInterest: loan.totalInterest,
+          totalPayable: loan.totalPayableAmount,
+          disbursedAmount: loan.disbursedAmount,
+
+          firstEmiDate: loan.firstEmiDate,
+          frequency: loan.collectionFreq,
+
+          fees: {
+            processing: loan.processingFees,
+            insurance: loan.insuranceFees,
+            others: loan.otherFees,
+          },
+
+          repayments: loan.repayments,
+        }
+      };
 
       // 5️⃣ Generate PDF
       const pdfBuffer = await generateContractPdf(contractData)

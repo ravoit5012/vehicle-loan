@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RedisService } from 'src/redis/redis.service';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
+import { uploadToStorage } from 'src/utils/uploadToStorage';
 
 const REDIS_KEY = 'company-settings';
 
@@ -55,5 +56,42 @@ export class CompanySettingsService {
     await this.redis.set(REDIS_KEY, JSON.stringify(settings));
 
     return { message: 'Company settings updated successfully', settings };
+  }
+
+  async uploadLogo(file: Express.Multer.File) {
+    // 1. Upload to R2
+    const logoUrl = await uploadToStorage(
+      file.buffer,
+      `company/logo.png`,
+      file.mimetype,
+    );
+
+    // 2. Save URL in DB (upsert)
+    const existing = await this.prisma.companySettings.findFirst();
+
+    let settings;
+    if (existing) {
+      settings = await this.prisma.companySettings.update({
+        where: { id: existing.id },
+        data: { logoUrl },
+      });
+    } else {
+      settings = await this.prisma.companySettings.create({
+        data: {
+          companyName: '',
+          companyEmail: '',
+          companyPhone: '',
+          companyAddress: '',
+          panNumber: '',
+          logoUrl,
+        },
+      });
+    }
+
+    // 3. Invalidate cache and re-set
+    await this.redis.del(REDIS_KEY);
+    await this.redis.set(REDIS_KEY, JSON.stringify(settings));
+
+    return { message: 'Logo uploaded successfully', logoUrl };
   }
 }

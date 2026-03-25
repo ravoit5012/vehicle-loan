@@ -412,5 +412,6 @@ model CompanySettings {
   companyPhone   String
   companyAddress String
   panNumber      String
+  logoUrl        String?
   updatedAt      DateTime @updatedAt
 }

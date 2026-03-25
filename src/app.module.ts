@@ -15,6 +15,7 @@ import { LoanModule } from './modules/loan/loan.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { RedisModule } from './redis/redis.module';
 import { CompanySettingsModule } from './modules/company-settings/company-settings.module';
+import { BackupModule } from './modules/backup/backup.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -33,6 +34,7 @@ import { CompanySettingsModule } from './modules/company-settings/company-settin
     AnalyticsModule,
     RedisModule,
     CompanySettingsModule,
+    BackupModule,
   ],
   controllers: [AppController],
   providers: [AppService],
