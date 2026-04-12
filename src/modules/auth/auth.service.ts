@@ -29,42 +29,6 @@ export class AuthService {
   }
 
 
-  // async login(username: string, password: string, role: Role) {
-  //   const user = await this.validateUser(username, password, role);
-  //   const payload = { username: user.username, role, sub: user.id || 0 };
-
-  //   const token = this.jwtService.sign(payload, {
-  //     secret: constants.jwtSecret,
-  //     expiresIn: '1d',
-  //   });
-
-  //   return token;
-  // }
-
-  // auth.service.ts
-  // async login(username: string, password: string, role: Role) {
-  //   const user = await this.validateUser(username, password, role);
-
-  //   const payload = {
-  //     sub: user.id,
-  //     username: user.username,
-  //     role: role,
-  //   };
-
-  //   const token = this.jwtService.sign(payload, {
-  //     secret: constantValues.jwtSecret,
-  //     expiresIn: constantValues.jwtExpiry,
-  //   });
-
-  //   // IMPORTANT: never return password
-  //   const { password: _, ...safeUser } = user;
-
-  //   return {
-  //     token,
-  //     user: safeUser,
-  //   };
-  // }
-
 
   async login(username: string, password: string, role: Role) {
     try {

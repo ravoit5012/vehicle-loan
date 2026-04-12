@@ -55,7 +55,13 @@ export class JwtAuthGuard implements CanActivate {
           throw new UnauthorizedException('Invalid role');
       }
 
-      if (!user || user.tokenVersion !== tokenVersion) {
+      if (!user) {
+        console.log("JWT GUARD FAILED: User not found for role", role, "and sub", sub);
+        throw new UnauthorizedException('Session expired');
+      }
+
+      if (user.tokenVersion !== tokenVersion) {
+        console.log("JWT GUARD FAILED: Token version mismatch for user", user.username, "expected", user.tokenVersion, "got", tokenVersion);
         throw new UnauthorizedException('Session expired');
       }
 

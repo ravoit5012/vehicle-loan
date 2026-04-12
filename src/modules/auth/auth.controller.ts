@@ -41,6 +41,7 @@ export class AuthController {
       };
     } catch (error) {
         console.log('Login Controller error:', error);
+        throw error;
     }
   }
 

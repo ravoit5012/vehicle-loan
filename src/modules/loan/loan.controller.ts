@@ -40,8 +40,7 @@ export class LoanController {
     @Param('id') id: string,
     @Req() req: any
   ) {
-    const managerId = req.user.id;
-    return this.loanService.markCallVerified(id, managerId);
+    return this.loanService.markCallVerified(id, req.user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -51,10 +50,10 @@ export class LoanController {
     @Req() req: any
   ) {
     try {
-      const managerId = req.user.id;
-      return this.loanService.generateContract(loanId, managerId);
+      return this.loanService.generateContract(loanId, req.user);
     } catch (error) {
       console.log(`Failed to generate contract: ${error.message}`);
+      throw error;
     }
   }
 
@@ -66,8 +65,7 @@ export class LoanController {
     @Req() req: any,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const userId = req.user.id;
-    return this.loanService.uploadSignedContract(loanId, file, userId);
+    return this.loanService.uploadSignedContract(loanId, file, req.user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -80,13 +78,12 @@ export class LoanController {
     longitude,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const agentId = req.user.id;
     return this.loanService.fieldVerifyLoan({
       loanId,
       files,
       latitude: req.body.latitude,
       longitude: req.body.longitude,
-      agentId
+      user: req.user
     });
   }
 
@@ -97,10 +94,9 @@ async adminApproveLoan(
   @Req() req: any,
   @Body('remark') remark: string
 ) {
-  const adminId = req.user.id;
   return this.loanService.adminApproveLoan(
     loanId,
-    adminId,
+    req.user,
     remark
   );
 }
@@ -113,7 +109,7 @@ async adminApproveLoan(
     @Req() req: any,
     @Body('remark') remark: string
   ) {
-    return this.loanService.rejectLoan(loanId, remark);
+    return this.loanService.rejectLoan(loanId, req.user, remark);
   }
 
 
@@ -123,7 +119,7 @@ async adminApproveLoan(
     @Param('id') loanId: string,
     @Req() req: any
   ) {
-    return this.loanService.disburseLoan(loanId);
+    return this.loanService.disburseLoan(loanId, req.user);
   }
 
 
@@ -135,6 +131,7 @@ async adminApproveLoan(
   ) {
     return this.loanService.closeLoan(
       loanId,
+      req.user
     );
   }
 

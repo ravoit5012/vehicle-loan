@@ -415,3 +415,10 @@ model CompanySettings {
   logoUrl        String?
   updatedAt      DateTime @updatedAt
 }
+
+model RoleAccess {
+  id               String                  @id @default(auto()) @map("_id") @db.ObjectId
+  role             Role                    @unique
+  allowedStatuses  LoanApplicationStatus[]
+  updatedAt        DateTime                @updatedAt
+}

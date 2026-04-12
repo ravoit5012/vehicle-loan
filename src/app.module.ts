@@ -16,6 +16,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { RedisModule } from './redis/redis.module';
 import { CompanySettingsModule } from './modules/company-settings/company-settings.module';
 import { BackupModule } from './modules/backup/backup.module';
+import { AccessControlModule } from './modules/access-control/access-control.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -35,6 +36,7 @@ import { BackupModule } from './modules/backup/backup.module';
     RedisModule,
     CompanySettingsModule,
     BackupModule,
+    AccessControlModule,
   ],
   controllers: [AppController],
   providers: [AppService],

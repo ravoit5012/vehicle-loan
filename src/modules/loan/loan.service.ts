@@ -8,9 +8,15 @@ import { LoanApplicationStatus } from 'src/common/enums/loan-application-status.
 import { generateContractPdf } from 'src/utils/pdf/generateContract';
 import { uploadToStorage } from 'src/utils/uploadToStorage';
 import { CustomersService } from '../customers/customers.service';
+import { AccessControlService } from '../access-control/access-control.service';
+
 @Injectable()
 export class LoanService {
-  constructor(private prisma: PrismaService, private customersService: CustomersService,) { }
+  constructor(
+    private prisma: PrismaService, 
+    private customersService: CustomersService,
+    private accessControlService: AccessControlService,
+  ) { }
 
   async createLoanApplication(dto) {
     const agentId = dto.agentId;
@@ -116,8 +122,10 @@ export class LoanService {
 
   async markCallVerified(
     loanId: string,
-    managerId: string
+    user: any
   ) {
+    await this.accessControlService.checkAccess(user.role, 'CALL_VERIFIED' as LoanApplicationStatus);
+    const managerId = user.id;
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
     });
@@ -144,9 +152,11 @@ export class LoanService {
 
   async generateContract(
     loanId: string,
-    managerId: string
+    user: any
   ) {
     try {
+      await this.accessControlService.checkAccess(user.role, 'CONTRACT_GENERATED' as LoanApplicationStatus);
+      const managerId = user.id;
       // 1️⃣ Fetch loan with all required relations
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId },
@@ -325,9 +335,11 @@ export class LoanService {
   async uploadSignedContract(
     loanId,
     file,
-    userId,
+    user,
   ) {
     try {
+      await this.accessControlService.checkAccess(user.role, 'CONTRACT_SIGNED' as LoanApplicationStatus);
+      const userId = user.id;
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId }
       })
@@ -380,9 +392,11 @@ export class LoanService {
     files,
     latitude,
     longitude,
-    agentId
+    user
   }) {
     try {
+      await this.accessControlService.checkAccess(user.role, 'FIELD_VERIFIED' as LoanApplicationStatus);
+      const agentId = user.id;
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId }
       })
@@ -452,9 +466,11 @@ export class LoanService {
 
   async adminApproveLoan(
     loanId: string,
-    adminId: string,
+    user: any,
     remark: string
   ) {
+    await this.accessControlService.checkAccess(user.role, 'ADMIN_APPROVED' as LoanApplicationStatus);
+    const adminId = user.id;
     const admin = await this.prisma.admin.findUnique({
       where: { id: adminId },
     });
@@ -494,8 +510,10 @@ export class LoanService {
 
   async rejectLoan(
     loanId: string,
+    user: any,
     remark: string
   ) {
+    await this.accessControlService.checkAccess(user.role, 'REJECTED' as LoanApplicationStatus);
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
     });
@@ -529,8 +547,10 @@ export class LoanService {
 
   async disburseLoan(
     loanId: string,
+    user: any
   ) {
     try {
+      await this.accessControlService.checkAccess(user.role, 'DISBURSED' as LoanApplicationStatus);
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId },
       });
@@ -606,9 +626,11 @@ export class LoanService {
 
 
   async closeLoan(
-    loanId: string
+    loanId: string,
+    user: any
   ) {
     try {
+      await this.accessControlService.checkAccess(user.role, 'CLOSED' as LoanApplicationStatus);
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId },
       });
