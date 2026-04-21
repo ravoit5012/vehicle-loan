@@ -49,13 +49,7 @@ export class AgentService {
   }
 
   async getAllAgents() {
-    return this.prisma.agent.findMany({
-      // select: {
-      //   id: true,
-      //   name: true,
-      //   email: true,
-      // },
-    });
+    return this.prisma.agent.findMany({ });
   }
 
   async getAgentById(id: string) {
@@ -92,8 +86,32 @@ export class AgentService {
 
     const updateData: any = { ...dto };
 
+    // Validate password length if password is provided
     if (dto.password) {
+      if (dto.password.length < 6) {
+        throw new BadRequestException('Password must be at least 6 characters long');
+      }
       updateData.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    // Check email uniqueness if email is being updated
+    if (dto.email && dto.email !== agent.email) {
+      const existingEmail = await this.prisma.agent.findUnique({
+        where: { email: dto.email },
+      });
+      if (existingEmail) {
+        throw new BadRequestException('Email is already in use by another agent');
+      }
+    }
+
+    // Check phone number uniqueness if phone number is being updated
+    if (dto.phoneNumber && dto.phoneNumber !== agent.phoneNumber) {
+      const existingPhone = await this.prisma.agent.findUnique({
+        where: { phoneNumber: dto.phoneNumber },
+      });
+      if (existingPhone) {
+        throw new BadRequestException('Phone number is already in use by another agent');
+      }
     }
 
     if (dto.managerId) {

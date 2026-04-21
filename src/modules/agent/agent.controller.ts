@@ -59,7 +59,12 @@ export class AgentController {
     @Param('id') id: string,
     @Body() dto: UpdateAgentDto,
   ) {
-    return this.agentService.updateAgent(id, dto);
+    try {
+      return await this.agentService.updateAgent(id, dto);
+    } catch (error) {
+      console.log('Error updating agent:', error);
+      throw error;
+    }
   }
 
   @Delete('delete/id/:id')
