@@ -19,7 +19,8 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      "http://13.63.34.69",   // Vite frontend
+      "http://13.63.34.69",
+      "https://lms.champanandmotors.com",   // Vite frontend
       "http://localhost:3000",   // Next.js frontend
     ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
