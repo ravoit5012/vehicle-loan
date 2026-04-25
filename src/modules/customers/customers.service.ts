@@ -174,7 +174,116 @@ export class CustomersService {
     return customer;
   }
 
-  async updateCustomer(id: string, dto: UpdateCustomerDto, files: any) {
+  async checkDuplicate(field: string, value: string, excludeId?: string) {
+    if (!field || !value) {
+      return { exists: false };
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) return { exists: false };
+
+    const notSelf = excludeId ? { NOT: { id: excludeId } } : {};
+
+    const documentNumberFields = new Set([
+      'poiDocumentNumber',
+      'poaDocumentNumber',
+      'nomineePoiDocumentNumber',
+      'nomineePoaDocumentNumber',
+    ]);
+
+    if (documentNumberFields.has(field)) {
+      const match = await this.prisma.customer.findFirst({
+        where: {
+          ...notSelf,
+          OR: [
+            { poiDocumentNumber: trimmed },
+            { poaDocumentNumber: trimmed },
+            { nomineePoiDocumentNumber: trimmed },
+            { nomineePoaDocumentNumber: trimmed },
+          ],
+        },
+        select: {
+          id: true,
+          applicantName: true,
+          memberId: true,
+          poiDocumentNumber: true,
+          poaDocumentNumber: true,
+          poiDocumentType: true,
+          poaDocumentType: true,
+          nomineePoiDocumentNumber: true,
+          nomineePoaDocumentNumber: true,
+          nomineePoiDocumentType: true,
+          nomineePoaDocumentType: true,
+        },
+      });
+
+      if (!match) return { exists: false };
+
+      let conflictField = '';
+      let conflictDocType = '';
+      if (match.poiDocumentNumber === trimmed) {
+        conflictField = 'poiDocumentNumber';
+        conflictDocType = match.poiDocumentType;
+      } else if (match.poaDocumentNumber === trimmed) {
+        conflictField = 'poaDocumentNumber';
+        conflictDocType = match.poaDocumentType;
+      } else if (match.nomineePoiDocumentNumber === trimmed) {
+        conflictField = 'nomineePoiDocumentNumber';
+        conflictDocType = match.nomineePoiDocumentType;
+      } else if (match.nomineePoaDocumentNumber === trimmed) {
+        conflictField = 'nomineePoaDocumentNumber';
+        conflictDocType = match.nomineePoaDocumentType;
+      }
+
+      return {
+        exists: true,
+        conflictField,
+        conflictDocType,
+        applicantName: match.applicantName,
+        memberId: match.memberId,
+      };
+    }
+
+    const allowedScalar = new Set([
+      'panNumber',
+      'mobileNumber',
+      'email',
+      'memberId',
+      'nomineePanNumber',
+    ]);
+
+    if (!allowedScalar.has(field)) {
+      throw new BadRequestException('Field not supported for duplicate check');
+    }
+
+    const match = await this.prisma.customer.findFirst({
+      where: { ...notSelf, [field]: trimmed } as any,
+      select: { id: true, applicantName: true, memberId: true },
+    });
+
+    return match
+      ? { exists: true, conflictField: field, applicantName: match.applicantName, memberId: match.memberId }
+      : { exists: false };
+  }
+
+  async deleteExtraDocument(customerId: string, docId: string) {
+    const customer = await this.prisma.customer.findUnique({ where: { id: customerId } });
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const remaining = (customer.extraDocuments || []).filter((d) => d.id !== docId);
+    if (remaining.length === (customer.extraDocuments || []).length) {
+      throw new NotFoundException('Document not found');
+    }
+
+    await this.prisma.customer.update({
+      where: { id: customerId },
+      data: { extraDocuments: remaining },
+    });
+
+    return { message: 'Document deleted successfully' };
+  }
+
+  async updateCustomer(id: string, dto: UpdateCustomerDto, files: any, currentUser?: any) {
     try {
       const existingCustomer = await this.prisma.customer.findUnique({ where: { id } });
 
@@ -183,6 +292,11 @@ export class CustomersService {
       }
 
       const { memberId, managerId, agentId, ...updatableData } = dto || {};
+
+      if (currentUser?.role === 'ADMIN') {
+        if (managerId) (updatableData as any).managerId = managerId;
+        if (agentId) (updatableData as any).agentId = agentId;
+      }
 
       // const overwriteIfExists = async (field: string, fileName: string) => {
       //   if (!files?.[field]?.[0]) return;

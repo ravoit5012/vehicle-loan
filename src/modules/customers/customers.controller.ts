@@ -134,8 +134,9 @@ export class CustomersController {
     @Param('id') id: string,
     @UploadedFiles() files: any,
     @Body() dto: UpdateCustomerDto,
+    @Req() req,
   ) {
-    return this.service.updateCustomer(id, dto, files);
+    return this.service.updateCustomer(id, dto, files, req.user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -143,6 +144,23 @@ export class CustomersController {
   @Delete('/delete/id/:id')
   async deleteCustomer(@Param('id') id: string) {
     return this.service.deleteCustomer(id);
+  }
+
+  @Post('/check-duplicate')
+  async checkDuplicate(
+    @Body() body: { field: string; value: string; excludeId?: string },
+  ) {
+    return this.service.checkDuplicate(body.field, body.value, body.excludeId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.AGENT)
+  @Delete('/:customerId/extra-documents/:docId')
+  async deleteExtraDocument(
+    @Param('customerId') customerId: string,
+    @Param('docId') docId: string,
+  ) {
+    return this.service.deleteExtraDocument(customerId, docId);
   }
 
   @Post('/upload-extra/:customerId')

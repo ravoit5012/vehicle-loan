@@ -27,17 +27,19 @@ export class LoanService {
       where: { id: dto.loanTypeId },
     });
     if (!customer) {
-      throw new Error('Customer not found');
+      throw new NotFoundException('Customer not found');
     }
     if (!loanType) {
-      throw new Error('Loan type not found');
+      throw new NotFoundException('Loan type not found');
     }
 
     if (
       dto.loanAmount < loanType.minAmount ||
       dto.loanAmount > loanType.maxAmount
     ) {
-      throw new Error('Loan amount out of bounds');
+      throw new BadRequestException(
+        `Loan amount must be between ${loanType.minAmount} and ${loanType.maxAmount}`,
+      );
     }
 
     // 2️⃣ Calculate Fees
