@@ -8,16 +8,26 @@ import { LoanApplicationStatus } from 'src/common/enums/loan-application-status.
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) { }
 
-  countAllLoans() {
-    return this.prisma.loanApplication.count();
+  private getRoleFilter(user: any) {
+    if (!user) return {};
+    if (user.role === 'AGENT') return { agentId: user.id };
+    if (user.role === 'MANAGER') return { managerId: user.id };
+    return {};
+  }
+
+  countAllLoans(user: any) {
+    return this.prisma.loanApplication.count({
+      where: this.getRoleFilter(user)
+    });
   }
   countAllLoanTypes() {
     return this.prisma.loanType.count();
   }
 
-  countApprovedLoans() {
+  countApprovedLoans(user: any) {
     return this.prisma.loanApplication.count({
       where: {
+        ...this.getRoleFilter(user),
         status: {
           in: [
             LoanApplicationStatus.ADMIN_APPROVED,
@@ -27,21 +37,23 @@ export class AnalyticsService {
       }
     });
   }
-  countRejectedLoans() {
+  countRejectedLoans(user: any) {
     return this.prisma.loanApplication.count({
       where: {
+        ...this.getRoleFilter(user),
         status: LoanApplicationStatus.REJECTED,
       }
     });
   }
 
-  async totalPrincipalAmount() {
+  async totalPrincipalAmount(user: any) {
     const result = await this.prisma.loanApplication.aggregate(
       {
         _sum: {
           loanAmount: true,
         },
         where: {
+          ...this.getRoleFilter(user),
           status: {
             in: [
               LoanApplicationStatus.ADMIN_APPROVED,
@@ -54,11 +66,12 @@ export class AnalyticsService {
     return result._sum.loanAmount || 0;
   }
 
-  async totalInterestAmount() {
+  async totalInterestAmount(user: any) {
     const result = await this.prisma.loanApplication.aggregate(
       {
         _sum: { totalInterest: true },
         where: {
+          ...this.getRoleFilter(user),
           status: {
             in: [
               LoanApplicationStatus.ADMIN_APPROVED,
@@ -71,12 +84,13 @@ export class AnalyticsService {
     return result._sum.totalInterest || 0;
   }
 
-  async totalRepaidAmount(): Promise<number> {
+  async totalRepaidAmount(user: any): Promise<number> {
     const loans = await this.prisma.loanApplication.findMany({
       select: {
         repayments: true,
       },
       where: {
+        ...this.getRoleFilter(user),
         status: {
             in: [
               LoanApplicationStatus.ADMIN_APPROVED,
@@ -95,13 +109,14 @@ export class AnalyticsService {
   }
 
 
-  async totalPendingAmount() {
+  async totalPendingAmount(user: any) {
     const result = await this.prisma.loanApplication.aggregate(
       {
         _sum: {
           remainingAmount: true,
         },
         where: {
+          ...this.getRoleFilter(user),
           status: {
             in: [
               LoanApplicationStatus.ADMIN_APPROVED,
@@ -114,11 +129,12 @@ export class AnalyticsService {
     return result._sum.remainingAmount || 0;
   }
 
-  async totalRepayableAmount() {
+  async totalRepayableAmount(user: any) {
     const result = await this.prisma.loanApplication.aggregate(
       {
         _sum: { totalPayableAmount: true, },
         where: {
+          ...this.getRoleFilter(user),
           status: {
             in: [
               LoanApplicationStatus.ADMIN_APPROVED,

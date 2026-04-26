@@ -4,10 +4,13 @@ import { UpdateAgentDto } from './dto/update-agent.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AgentService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+  ) { }
   async createAgent(dto: CreateAgentDto) {
     // Validate manager exists
     const manager = await this.prisma.manager.findUnique({
@@ -49,7 +52,17 @@ export class AgentService {
   }
 
   async getAllAgents() {
-    return this.prisma.agent.findMany({ });
+    const agents = await this.prisma.agent.findMany({});
+    const managers = await this.prisma.manager.findMany({});
+
+    const managerMap = new Map(
+      managers.map((m) => [m.id.toString(), m])
+    );
+
+    return agents.map((agent) => ({
+      ...agent,
+      manager: managerMap.get(agent.managerId?.toString()) || null,
+    }));
   }
 
   async getAgentById(id: string) {
@@ -61,7 +74,16 @@ export class AgentService {
       throw new NotFoundException('Agent not found');
     }
 
-    return agent;
+    const manager = agent.managerId
+      ? await this.prisma.manager.findUnique({
+        where: { id: agent.managerId },
+      })
+      : null;
+
+    return {
+      ...agent,
+      manager,
+    };
   }
 
   async getAgentsByManager(managerId: string) {
@@ -124,10 +146,25 @@ export class AgentService {
       }
     }
 
-    return this.prisma.agent.update({
+    const updatedAgent = await this.prisma.agent.update({
       where: { id },
       data: updateData,
     });
+
+    // Cascade manager update to all customers and loan applications assigned to this agent
+    if (dto.managerId && dto.managerId !== agent.managerId) {
+      await this.prisma.customer.updateMany({
+        where: { agentId: id },
+        data: { managerId: dto.managerId },
+      });
+
+      await this.prisma.loanApplication.updateMany({
+        where: { agentId: id },
+        data: { managerId: dto.managerId },
+      });
+    }
+
+    return updatedAgent;
   }
 
   async deleteAgent(id: string) {

@@ -1,16 +1,22 @@
-// loan-type.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateLoanTypeDto } from './dto/create-loan-type.dto';
 import { UpdateLoanTypeDto } from './dto/update-loan-type.dto';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class LoanTypesService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+  ) { }
 
-  async create(createLoanTypeDto: CreateLoanTypeDto) {
+  async create(createLoanTypeDto: CreateLoanTypeDto, user: any) {
     try {
-      await this.prisma.loanType.create({
+      if (user?.role === 'MANAGER') {
+        createLoanTypeDto.status = 'NOT_APPROVED';
+      }
+
+      const loanType = await this.prisma.loanType.create({
         data: createLoanTypeDto,
       });
       return { message: 'Loan type created successfully' };
@@ -31,12 +37,16 @@ export class LoanTypesService {
     return loanType;
   }
 
-  async update(id: string, updateLoanTypeDto: UpdateLoanTypeDto) {
+  async update(id: string, updateLoanTypeDto: UpdateLoanTypeDto, user: any) {
     try {
       const exists = await this.prisma.loanType.findUnique({ where: { id } });
       if (!exists) throw new NotFoundException('Loan type not found');
 
-      await this.prisma.loanType.update({
+      if (user?.role === 'MANAGER') {
+        updateLoanTypeDto.status = 'NOT_APPROVED';
+      }
+
+      const updatedLoanType = await this.prisma.loanType.update({
         where: { id },
         data: updateLoanTypeDto,
       });

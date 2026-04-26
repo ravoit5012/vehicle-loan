@@ -111,19 +111,19 @@ export class LoanController {
     });
   }
 
-@UseGuards(JwtAuthGuard)
-@Post('/admin-approve/id/:id')
-async adminApproveLoan(
-  @Param('id') loanId: string,
-  @Req() req: any,
-  @Body('remark') remark: string
-) {
-  return this.loanService.adminApproveLoan(
-    loanId,
-    req.user,
-    remark
-  );
-}
+  @UseGuards(JwtAuthGuard)
+  @Post('/admin-approve/id/:id')
+  async adminApproveLoan(
+    @Param('id') loanId: string,
+    @Req() req: any,
+    @Body('remark') remark: string
+  ) {
+    return this.loanService.adminApproveLoan(
+      loanId,
+      req.user,
+      remark
+    );
+  }
 
 
   @UseGuards(JwtAuthGuard)

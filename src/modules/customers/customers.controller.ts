@@ -93,9 +93,11 @@ export class CustomersController {
   }
 
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.AGENT)
   @Get('count')
-  async getCustomerCount() {
-    return { count: await this.service.getCustomerCount() };
+  async getCustomerCount(@Req() req) {
+    return { count: await this.service.getCustomerCount(req.user) };
   }
 
   @Get('/id/:id')

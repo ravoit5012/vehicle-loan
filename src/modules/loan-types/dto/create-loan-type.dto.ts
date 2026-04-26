@@ -1,8 +1,8 @@
 import { IsString, IsEnum, IsOptional, IsNumber, IsBoolean, IsArray } from 'class-validator';
-import { STATUS as LoanStatus } from '../../../common/enums/status.enum';
+import { LoanStatus, VehicleCondition } from '@prisma/client';
 import { InterestType } from '../../../common/enums/interest-type.enum';
 import { CollectionFrequency } from '../../../common/enums/collection-frequency.enum';
-import { VehicleCondition } from '@prisma/client';
+
 import { ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer'
 

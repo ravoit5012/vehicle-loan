@@ -214,7 +214,7 @@ enum AccountStatus {
 model LoanType {
   id                String            @id @map("_id") @default(auto()) @db.ObjectId
   loanName          String            @unique
-  status            LoanStatus        @default(ACTIVE)
+  status            LoanStatus        @default(NOT_APPROVED)
   description       String?
   vehicleCondition  VehicleCondition  @default(NEW)
 
@@ -239,8 +239,8 @@ model LoanType {
 }
 
 enum LoanStatus {
-  ACTIVE
-  INACTIVE
+  APPROVED
+  NOT_APPROVED
 }
 
 enum InterestType {

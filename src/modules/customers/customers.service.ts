@@ -101,12 +101,22 @@ export class CustomersService {
     }
   }
 
-  async getCustomerCount() {
-    return this.prisma.customer.count();
+  private getRoleFilter(user: any) {
+    if (!user) return {};
+    if (user.role === 'AGENT') return { agentId: user.id };
+    if (user.role === 'MANAGER') return { managerId: user.id };
+    return {};
+  }
+
+  async getCustomerCount(user?: any) {
+    return this.prisma.customer.count({
+      where: this.getRoleFilter(user)
+    });
   }
 
   async findAll(user: { id: string; role: string }) {
     return this.prisma.customer.findMany({
+      where: this.getRoleFilter(user),
       select: {
         id: true,
         applicantName: true,

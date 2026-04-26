@@ -9,6 +9,7 @@ import { generateContractPdf } from 'src/utils/pdf/generateContract';
 import { uploadToStorage } from 'src/utils/uploadToStorage';
 import { CustomersService } from '../customers/customers.service';
 import { AccessControlService } from '../access-control/access-control.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class LoanService {
@@ -23,6 +24,7 @@ export class LoanService {
     const customer = await this.prisma.customer.findUnique({
       where: { id: dto.customerId },
     });
+    const managerId = customer?.managerId;
     const loanType = await this.prisma.loanType.findUnique({
       where: { id: dto.loanTypeId },
     });
@@ -31,6 +33,10 @@ export class LoanService {
     }
     if (!loanType) {
       throw new NotFoundException('Loan type not found');
+    }
+
+    if (loanType.status !== 'APPROVED') {
+      throw new BadRequestException('Loan type is not approved and cannot be used');
     }
 
     if (
@@ -87,6 +93,7 @@ export class LoanService {
         customerId: customer.id,
         loanTypeId: loanType.id,
         agentId,
+        managerId,
         loanAmount: dto.loanAmount,
         interestRate: loanType.interestRate,
         interestType: loanType.interestType,
@@ -129,9 +136,15 @@ export class LoanService {
   }
 
   async getById(id: string) {
-    return this.prisma.loanApplication.findUnique({
-      where: { id },
+    const loan = await this.prisma.loanApplication.findUnique({ where: { id } });
+    if (!loan) return null;
+    
+    const loanType = await this.prisma.loanType.findUnique({
+      where: { id: loan.loanTypeId },
+      select: { vehicleCondition: true, loanName: true }
     });
+
+    return { ...loan, vehicleCondition: loanType?.vehicleCondition ?? null };
   }
 
   async checkDuplicateVehicle(dto: { chassisNumber?: string, engineNumber?: string, registrationNumber?: string, repoFinancerName?: string }) {
@@ -644,7 +657,6 @@ export class LoanService {
           housePhotos
         }
       })
-
       return {
         success: true,
         message: "Field verification completed successfully"
@@ -654,7 +666,6 @@ export class LoanService {
       throw new BadRequestException(error.message)
     }
   }
-
   async adminApproveLoan(
     loanId: string,
     user: any,
@@ -678,7 +689,7 @@ export class LoanService {
       throw new NotFoundException('Loan application not found');
     }
 
-    if (loan.status !== LoanApplicationStatus.FIELD_VERIFIED) {
+    if (loan.status !== LoanApplicationStatus.MANAGER_APPROVED) {
       throw new BadRequestException(
         `Loan cannot be admin-approved from status ${loan.status}`
       );

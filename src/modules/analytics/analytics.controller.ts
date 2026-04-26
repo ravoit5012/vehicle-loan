@@ -1,47 +1,50 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { CreateAnalyticsDto } from './dto/create-analytics.dto';
 import { UpdateAnalyticsDto } from './dto/update-analytics.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth-guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('analytics')
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(private readonly analyticsService: AnalyticsService) { }
 
+  @UseGuards(JwtAuthGuard)
   @Get('/all-loan-count')
-  findAll() {
-    return this.analyticsService.countAllLoans();
+  findAll(@Req() req: any) {
+    return this.analyticsService.countAllLoans(req.user);
   }
   @Get('/all-loan-type-count')
   findAllLoanTypes() {
     return this.analyticsService.countAllLoanTypes();
   }
   @Get('/all-approved-loan-count')
-  findAllApproved() {
-    return this.analyticsService.countApprovedLoans();
+  findAllApproved(@Req() req: any) {
+    return this.analyticsService.countApprovedLoans(req.user);
   }
   @Get('/all-rejected-loan-count')
-  findAllRejected() {
-    return this.analyticsService.countRejectedLoans();
+  findAllRejected(@Req() req: any) {
+    return this.analyticsService.countRejectedLoans(req.user);
   }
   @Get('/total-principal-amount')
-  totalPrincipalAmount() {
-    return this.analyticsService.totalPrincipalAmount();
+  totalPrincipalAmount(@Req() req: any) {
+    return this.analyticsService.totalPrincipalAmount(req.user);
   }
   @Get('/total-interest-amount')
-  totalInterestAmount() {
-    return this.analyticsService.totalInterestAmount();
+  totalInterestAmount(@Req() req: any) {
+    return this.analyticsService.totalInterestAmount(req.user);
   }
   @Get('/total-repaid-amount')
-  totalRepaidAmount() {
-    return this.analyticsService.totalRepaidAmount();
+  totalRepaidAmount(@Req() req: any) {
+    return this.analyticsService.totalRepaidAmount(req.user);
   }
   @Get('/total-pending-amount')
-  totalPendingAmount() {
-    return this.analyticsService.totalPendingAmount();
+  totalPendingAmount(@Req() req: any) {
+    return this.analyticsService.totalPendingAmount(req.user);
   }
   @Get('/total-repayable-amount')
-  totalRepayableAmount() {
-    return this.analyticsService.totalRepayableAmount();
+  totalRepayableAmount(@Req() req: any) {
+    return this.analyticsService.totalRepayableAmount(req.user);
   }
 
   @Get('/manager-analytics')
