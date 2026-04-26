@@ -19,76 +19,33 @@ export class CustomersService {
     console.log("FILES RECEIVED:", files);
 
     try {
-      const panImageUrl = await uploadToStorage(
-        files.panImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/pan${extname(files.panImage[0].originalname)}`,
-        files.panImage[0].mimetype
-      );
-      const poiFrontImageUrl = await uploadToStorage(
-        files.poiFrontImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/poiFrontImage${extname(files.poiFrontImage[0].originalname)}`,
-        files.poiFrontImage[0].mimetype
-      );
-      const poiBackImageUrl = await uploadToStorage(
-        files.poiBackImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/poiBackImage${extname(files.poiBackImage[0].originalname)}`,
-        files.poiBackImage[0].mimetype
-      );
-      const poaFrontImageUrl = await uploadToStorage(
-        files.poaFrontImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/poaFrontImage${extname(files.poaFrontImage[0].originalname)}`,
-        files.poaFrontImage[0].mimetype
-      );
-      const poaBackImageUrl = await uploadToStorage(
-        files.poaBackImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/poaBackImage${extname(files.poaBackImage[0].originalname)}`,
-        files.poaBackImage[0].mimetype
-      );
-      const applicantSignatureUrl = await uploadToStorage(
-        files.applicantSignature[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/signature${extname(files.applicantSignature[0].originalname)}`,
-        files.applicantSignature[0].mimetype
-      );
-      const personalPhotoUrl = await uploadToStorage(
-        files.personalPhoto[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/photo${extname(files.personalPhoto[0].originalname)}`,
-        files.personalPhoto[0].mimetype
-      );
-      const nomineePanImageUrl = await uploadToStorage(
-        files.nomineePanImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePan${extname(files.nomineePanImage[0].originalname)}`,
-        files.nomineePanImage[0].mimetype
-      );
-      const nomineePoiFrontImageUrl = await uploadToStorage(
-        files.nomineePoiFrontImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePoiFront${extname(files.nomineePoiFrontImage[0].originalname)}`,
-        files.nomineePoiFrontImage[0].mimetype
-      );
-      const nomineePoiBackImageUrl = await uploadToStorage(
-        files.nomineePoiBackImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePoiBack${extname(files.nomineePoiBackImage[0].originalname)}`,
-        files.nomineePoiBackImage[0].mimetype
-      );
-      const nomineePoaFrontImageUrl = await uploadToStorage(
-        files.nomineePoaFrontImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePoaFront${extname(files.nomineePoaFrontImage[0].originalname)}`,
-        files.nomineePoaFrontImage[0].mimetype
-      );
-      const nomineePoaBackImageUrl = await uploadToStorage(
-        files.nomineePoaBackImage[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePoaBack${extname(files.nomineePoaBackImage[0].originalname)}`,
-        files.nomineePoaBackImage[0].mimetype
-      );
-      const nomineeSignatureUrl = await uploadToStorage(
-        files.nomineeSignature[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineeSignature${extname(files.nomineeSignature[0].originalname)}`,
-        files.nomineeSignature[0].mimetype
-      );
-      const nomineePersonalPhotoUrl = await uploadToStorage(
-        files.nomineePersonalPhoto[0].buffer,
-        `customers/${dto.applicantName}-${dto.mobileNumber}/nomineePhoto${extname(files.nomineePersonalPhoto[0].originalname)}`,
-        files.nomineePersonalPhoto[0].mimetype
-      );
+      const getFileUrl = async (field: keyof CreateCustomerDto, fileArr: any, fileName: string) => {
+        if (dto[field]) return dto[field] as string;
+        if (fileArr && fileArr[0]) {
+          return await uploadToStorage(
+            fileArr[0].buffer,
+            `customers/${dto.applicantName}-${dto.mobileNumber}/${fileName}${extname(fileArr[0].originalname)}`,
+            fileArr[0].mimetype
+          );
+        }
+        return ''; 
+      };
+
+      const panImageUrl = await getFileUrl('panImageUrl', files?.panImage, 'pan');
+      const poiFrontImageUrl = await getFileUrl('poiFrontImageUrl', files?.poiFrontImage, 'poiFrontImage');
+      const poiBackImageUrl = await getFileUrl('poiBackImageUrl', files?.poiBackImage, 'poiBackImage');
+      const poaFrontImageUrl = await getFileUrl('poaFrontImageUrl', files?.poaFrontImage, 'poaFrontImage');
+      const poaBackImageUrl = await getFileUrl('poaBackImageUrl', files?.poaBackImage, 'poaBackImage');
+      const applicantSignatureUrl = await getFileUrl('applicantSignatureUrl', files?.applicantSignature, 'signature');
+      const personalPhotoUrl = await getFileUrl('personalPhotoUrl', files?.personalPhoto, 'photo');
+
+      const nomineePanImageUrl = await getFileUrl('nomineePanImageUrl', files?.nomineePanImage, 'nomineePan');
+      const nomineePoiFrontImageUrl = await getFileUrl('nomineePoiFrontImageUrl', files?.nomineePoiFrontImage, 'nomineePoiFront');
+      const nomineePoiBackImageUrl = await getFileUrl('nomineePoiBackImageUrl', files?.nomineePoiBackImage, 'nomineePoiBack');
+      const nomineePoaFrontImageUrl = await getFileUrl('nomineePoaFrontImageUrl', files?.nomineePoaFrontImage, 'nomineePoaFront');
+      const nomineePoaBackImageUrl = await getFileUrl('nomineePoaBackImageUrl', files?.nomineePoaBackImage, 'nomineePoaBack');
+      const nomineeSignatureUrl = await getFileUrl('nomineeSignatureUrl', files?.nomineeSignature, 'nomineeSignature');
+      const nomineePersonalPhotoUrl = await getFileUrl('nomineePersonalPhotoUrl', files?.nomineePersonalPhoto, 'nomineePhoto');
       return this.prisma.customer.create({
         data: {
           ...dto,
@@ -477,5 +434,14 @@ async uploadExtraDocuments(
 
   return { message: 'Documents uploaded successfully' };
 }
+
+  async uploadSingleDocument(file: any, applicantName: string, mobileNumber: string, documentType: string) {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+    const key = `customers/${applicantName}-${mobileNumber}/${documentType}${extname(file.originalname)}`;
+    const url = await uploadToStorage(file.buffer, key, file.mimetype);
+    return { url, fieldName: documentType };
+  }
 
 }

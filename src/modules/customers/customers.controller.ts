@@ -8,9 +8,10 @@ import {
   Request as Req,
   UseInterceptors,
   UploadedFiles,
+  UploadedFile,
   Param,
 } from '@nestjs/common';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage, memoryStorage } from 'multer';
 import { extname } from 'path';
 import { CustomersService } from './customers.service';
@@ -54,15 +55,19 @@ export class CustomersController {
   )
   async create(@UploadedFiles() files: any,
     @Body() dto: CreateCustomerDto) {
-    console.log('Files received:', Object.keys(files));
-    Object.entries(files).forEach(([key, value]) => {
-      const fileArray = value as Express.Multer.File[] | undefined;
-      if (fileArray && fileArray.length > 0) {
-        console.log(`${key}: size=${fileArray[0].size} mimetype=${fileArray[0].mimetype}`);
-      } else {
-        console.log(`${key}: no file uploaded`);
-      }
-    });
+    if (files) {
+      console.log('Files received:', Object.keys(files));
+      Object.entries(files).forEach(([key, value]) => {
+        const fileArray = value as Express.Multer.File[] | undefined;
+        if (fileArray && fileArray.length > 0) {
+          console.log(`${key}: size=${fileArray[0].size} mimetype=${fileArray[0].mimetype}`);
+        } else {
+          console.log(`${key}: no file uploaded`);
+        }
+      });
+    } else {
+      console.log('No multi-part files received. Processing purely via JSON payload.');
+    }
 
 
     console.log('DTO:', dto);
@@ -177,6 +182,17 @@ export class CustomersController {
   ) {
     return this.service.uploadExtraDocuments(customerId, dto, files);
   }
-
+  @Post('/upload-single-document')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadSingleDocument(
+    @UploadedFile() file: any,
+    @Body() body: { applicantName: string; mobileNumber: string; documentType: string }
+  ) {
+    if (!file) throw new Error('File not provided');
+    if (!body.applicantName || !body.mobileNumber || !body.documentType) {
+      throw new Error('applicantName, mobileNumber, and documentType are required');
+    }
+    return this.service.uploadSingleDocument(file, body.applicantName, body.mobileNumber, body.documentType);
+  }
 
 }
