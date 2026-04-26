@@ -2,6 +2,7 @@ import { IsString, IsEnum, IsOptional, IsNumber, IsBoolean, IsArray } from 'clas
 import { STATUS as LoanStatus } from '../../../common/enums/status.enum';
 import { InterestType } from '../../../common/enums/interest-type.enum';
 import { CollectionFrequency } from '../../../common/enums/collection-frequency.enum';
+import { VehicleCondition } from '@prisma/client';
 import { ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer'
 
@@ -24,6 +25,9 @@ export class CreateLoanTypeDto {
 
   @IsEnum(LoanStatus)
   status: LoanStatus;
+
+  @IsEnum(VehicleCondition)
+  vehicleCondition: VehicleCondition;
 
   @IsOptional()
   @IsString()

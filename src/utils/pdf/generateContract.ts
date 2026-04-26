@@ -56,6 +56,7 @@ export async function generateContractPdf(data: any): Promise<Buffer> {
             await sectionBorrowerDetails(doc, data, fetchImage);
             await sectionNomineeDetails(doc, data, fetchImage);
             await sectionLoanSummary(doc, data);
+            await sectionVehicleHypothecation(doc, data, fetchImage);
             await sectionFeesBreakdown(doc, data);
             await sectionRepaymentSchedule(doc, data);
             await sectionTermsAndConditions(doc, data);
@@ -369,6 +370,92 @@ async function sectionLoanSummary(doc: any, data: any) {
         width: doc.page.width - LAYOUT.MARGIN_X * 2,
         align: 'justify',
     });
+}
+
+/* =====================================================================
+ * SECTION 5.1 — VEHICLE HYPOTHECATION DETAILS
+ * ===================================================================*/
+async function sectionVehicleHypothecation(doc: any, data: any, fetchImage: any) {
+    const loan = data.loan || {};
+
+    // Only display this section if the loan has any vehicle details stored
+    if (!loan.registrationNumber && !loan.chassisNumber && !loan.engineNumber && !loan.repoFinancerName) {
+        return;
+    }
+
+    doc.addPage();
+    sectionHeading(doc, 'Vehicle Hypothecation Details');
+
+    doc.moveDown(0.5);
+    doc.font('Helvetica').fontSize(9.5).fillColor(LAYOUT.MUTED).text(
+        'The Borrower hereby agrees to hypothecate the following vehicle in favour of the Lender as security towards the repayment of the loan sum. The Borrower undertakes not to sell, transfer, or create any third-party encumbrance over this asset during the tenure of this Agreement.',
+        { align: 'justify' },
+    );
+    doc.fillColor('black');
+    doc.moveDown(1);
+
+    kvTable(doc, [
+        ['Registration Number', safeStr(loan.registrationNumber, 'N/A')],
+        ['Chassis Number', safeStr(loan.chassisNumber, 'N/A')],
+        ['Engine Number', safeStr(loan.engineNumber, 'N/A')],
+        ['Financer Name', safeStr(loan.repoFinancerName, 'N/A')],
+        ['Verification Status', loan.vehicleDetailsVerified ? 'Verified by Admin' : 'Pending Verification'],
+    ]);
+
+    doc.moveDown(1.5);
+    subHeading(doc, 'Vehicle Photographic Evidence');
+    doc.moveDown(0.5);
+
+    const vehicleImages = [
+        { title: 'Registration Certificate', url: loan.registrationImageUrl },
+        { title: 'Chassis Photograph', url: loan.chassisImageUrl },
+        { title: 'Engine Photograph', url: loan.engineImageUrl },
+        { title: 'Financer NOC / Document', url: loan.repoFinancerImageUrl },
+    ];
+
+    let x = LAYOUT.MARGIN_X;
+    let y = doc.y;
+    const imgWidth = 230;
+    const imgHeight = 150;
+    const spacingX = doc.page.width - LAYOUT.MARGIN_X * 2 - imgWidth * 2;
+    const spacingY = imgHeight + 40; // Title margin
+
+    for (let i = 0; i < vehicleImages.length; i++) {
+        const vi = vehicleImages[i];
+        if (!vi.url) continue;
+
+        // Check if we need to wrap to next page for images
+        if (y + spacingY > doc.page.height - LAYOUT.MARGIN_BOTTOM) {
+            doc.addPage();
+            y = LAYOUT.MARGIN_TOP;
+        }
+
+        try {
+            const buf = await fetchImage(vi.url);
+            doc.font('Helvetica-Bold').fontSize(10).text(vi.title, x, y);
+            doc.image(buf, x, y + 15, { width: imgWidth, height: imgHeight });
+        } catch (e) {
+            doc.font('Helvetica-Bold').fontSize(10).text(vi.title, x, y);
+            doc.rect(x, y + 15, imgWidth, imgHeight);
+            doc.font('Helvetica-Oblique').fontSize(9).fillColor(LAYOUT.MUTED).text(
+                '(Image Unavailable)',
+                x,
+                y + 15 + imgHeight / 2 - 5,
+                { width: imgWidth, align: 'center' }
+            );
+            doc.fillColor('black');
+        }
+
+        // Logic for 2 column layout
+        if (x === LAYOUT.MARGIN_X) {
+            x += imgWidth + spacingX;
+        } else {
+            x = LAYOUT.MARGIN_X;
+            y += spacingY;
+        }
+    }
+
+    doc.y = y + (x === LAYOUT.MARGIN_X ? 0 : spacingY);
 }
 
 /* =====================================================================

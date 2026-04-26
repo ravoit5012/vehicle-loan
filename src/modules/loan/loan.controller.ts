@@ -17,12 +17,36 @@ export class LoanController {
   @UseGuards(JwtAuthGuard)
   @Post('/create')
   create(@Body() createLoanDto: CreateLoanDto, @Req() req: any) {
-    return this.loanService.createLoanApplication(createLoanDto);
+    return this.loanService.createLoanApplication(createLoanDto, req.user);
   }
 
   @Get('get-all')
   getAll() {
     return this.loanService.getAll();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('check-duplicate-vehicle')
+  async checkDuplicateVehicle(@Body() dto: any) {
+    return this.loanService.checkDuplicateVehicle(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('/update-vehicle/:id')
+  async updateVehicleDetails(@Param('id') loanId: string, @Req() req: any, @Body() dto: any) {
+    return this.loanService.updateVehicleDetails(loanId, req.user, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('/update-info/:id')
+  async updateLoanInfo(@Param('id') loanId: string, @Req() req: any, @Body() dto: any) {
+    return this.loanService.updateLoanInfo(loanId, req.user, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('/verify-vehicle/:id')
+  async verifyVehicleDetails(@Param('id') loanId: string, @Req() req: any) {
+    return this.loanService.verifyVehicleDetails(loanId, req.user);
   }
 
   @Get('/id/:id')

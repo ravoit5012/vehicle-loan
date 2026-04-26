@@ -13,12 +13,12 @@ import { AccessControlService } from '../access-control/access-control.service';
 @Injectable()
 export class LoanService {
   constructor(
-    private prisma: PrismaService, 
+    private prisma: PrismaService,
     private customersService: CustomersService,
     private accessControlService: AccessControlService,
   ) { }
 
-  async createLoanApplication(dto) {
+  async createLoanApplication(dto, user?: any) {
     const agentId = dto.agentId;
     const customer = await this.prisma.customer.findUnique({
       where: { id: dto.customerId },
@@ -103,6 +103,18 @@ export class LoanService {
         repayments: emiSchedule,
         feesPaymentMethod: dto.feesPaymentMethod,
         disbursementMethod: dto.disbursementMethod,
+
+        registrationNumber: dto.registrationNumber || null,
+        chassisNumber: dto.chassisNumber || null,
+        engineNumber: dto.engineNumber || null,
+        repoFinancerName: dto.repoFinancerName || null,
+
+        registrationImageUrl: dto.registrationImageUrl || null,
+        chassisImageUrl: dto.chassisImageUrl || null,
+        engineImageUrl: dto.engineImageUrl || null,
+        repoFinancerImageUrl: dto.repoFinancerImageUrl || null,
+        vehicleDetailsVerified: user?.role === 'ADMIN' ? true : false,
+
         status: 'SUBMITTED',
         submittedAt: new Date(),
       },
@@ -121,6 +133,143 @@ export class LoanService {
       where: { id },
     });
   }
+
+  async checkDuplicateVehicle(dto: { chassisNumber?: string, engineNumber?: string, registrationNumber?: string, repoFinancerName?: string }) {
+    const conflicts: string[] = [];
+    const checkField = async (field: string, value: string | undefined) => {
+      if (!value) return;
+      const existing = await this.prisma.loanApplication.findFirst({
+        where: {
+          [field]: value,
+          status: { notIn: ['REJECTED', 'REJECTED_BY_MANAGER', 'REJECTED_BY_ADMIN', 'CLOSED'] } // Skip checking against fully rejected/closed loans
+        }
+      });
+      if (existing) conflicts.push(field);
+    };
+
+    await Promise.all([
+      checkField('chassisNumber', dto.chassisNumber),
+      checkField('engineNumber', dto.engineNumber),
+      checkField('registrationNumber', dto.registrationNumber),
+    ]);
+
+    return { isDuplicate: conflicts.length > 0, conflicts };
+  }
+
+  async updateVehicleDetails(loanId: string, user: any, dto: any) {
+    const loan = await this.prisma.loanApplication.findUnique({ where: { id: loanId } });
+    if (!loan) throw new NotFoundException('Loan not found');
+
+    // Only prevent edits if it is fully CLOSED
+    if (loan.status === LoanApplicationStatus.CLOSED) {
+      throw new BadRequestException('Cannot edit vehicle details of a closed loan.');
+    }
+
+    // Un-verify if an agent updates it
+    const isVerifyChange = user.role === 'ADMIN' ? loan.vehicleDetailsVerified : false;
+
+    return this.prisma.loanApplication.update({
+      where: { id: loanId },
+      data: {
+        registrationNumber: dto.registrationNumber,
+        chassisNumber: dto.chassisNumber,
+        engineNumber: dto.engineNumber,
+        repoFinancerName: dto.repoFinancerName,
+        registrationImageUrl: dto.registrationImageUrl,
+        chassisImageUrl: dto.chassisImageUrl,
+        engineImageUrl: dto.engineImageUrl,
+        repoFinancerImageUrl: dto.repoFinancerImageUrl,
+        vehicleDetailsVerified: isVerifyChange,
+      }
+    });
+  }
+
+  async updateLoanInfo(loanId: string, user: any, dto: any) {
+    const loan = await this.prisma.loanApplication.findUnique({
+      where: { id: loanId },
+    });
+    if (!loan) throw new NotFoundException('Loan not found');
+
+    if (!['SUBMITTED', 'PENDING', 'DRAFT', 'CALL_VERIFIED', 'CONTRACT_GENERATED', 'CONTRACT_SIGNED'].includes(loan.status)) {
+      throw new BadRequestException('Cannot strictly edit details of a loan that has progressed past pending/submitted statuses.');
+    }
+    const loanType = await this.prisma.loanType.findUnique({
+      where: { id: loan.loanTypeId }
+    })
+
+    if (!loanType) throw new BadRequestException("Malfunctioned Loan");
+    // const loanType = loan.loanType as any;
+
+    if (
+      dto.loanAmount < loanType.minAmount ||
+      dto.loanAmount > loanType.maxAmount
+    ) {
+      throw new BadRequestException(
+        `Loan amount must be between ${loanType.minAmount} and ${loanType.maxAmount}`,
+      );
+    }
+
+    const totalFees = calculateTotalFees(
+      dto.loanAmount,
+      loanType.processingFees,
+      loanType.insuranceFees,
+      [...(Array.isArray(loanType.otherFees) ? loanType.otherFees : []), ...dto.additionalFees]
+    );
+
+    const loanCalc =
+      loanType.interestType === 'FLAT'
+        ? calculateFlatLoan(dto.loanAmount, loanType.interestRate, dto.loanDuration, dto.collectionFreq)
+        : calculateReducingLoan(dto.loanAmount, loanType.interestRate, dto.loanDuration, dto.collectionFreq);
+
+    const emiSchedule = generateEmiSchedule(
+      dto.loanAmount,
+      loanType.interestRate,
+      dto.loanDuration,
+      dto.collectionFreq,
+      dto.firstEmiDate,
+      loanType.interestType
+    );
+
+    const disbursedAmount = calculateDisbursedAmount(
+      dto.loanAmount,
+      totalFees,
+      dto.feesPaymentMethod
+    );
+
+    return this.prisma.loanApplication.update({
+      where: { id: loanId },
+      data: {
+        loanAmount: dto.loanAmount,
+        loanDuration: dto.loanDuration,
+        collectionFreq: dto.collectionFreq,
+        otherFees: [...(Array.isArray(loanType.otherFees) ? loanType.otherFees : []), ...dto.additionalFees],
+        totalInterest: Math.round(loanCalc.totalInterest * 100) / 100,
+        totalPayableAmount: Math.round(loanCalc.totalPayable * 100) / 100,
+        disbursedAmount,
+        remainingAmount: Math.round(loanCalc.totalPayable * 100) / 100,
+        firstEmiDate: dto.firstEmiDate,
+        repayments: emiSchedule,
+        feesPaymentMethod: dto.feesPaymentMethod,
+        disbursementMethod: dto.disbursementMethod,
+        status: 'SUBMITTED',
+        contractDocument: { unset: true } as any,
+        signedContractDocument: { unset: true } as any,
+        contractSignedAt: { unset: true } as any,
+      },
+    });
+  }
+
+  async verifyVehicleDetails(loanId: string, user: any) {
+    await this.accessControlService.checkAccess(user.role, 'ADMIN_APPROVED' as LoanApplicationStatus); // Effectively Admin only
+    const loan = await this.prisma.loanApplication.findUnique({ where: { id: loanId } });
+    if (!loan) throw new NotFoundException('Loan not found');
+
+    return this.prisma.loanApplication.update({
+      where: { id: loanId },
+      data: { vehicleDetailsVerified: true }
+    });
+  }
+
 
   async markCallVerified(
     loanId: string,
@@ -323,6 +472,17 @@ export class LoanService {
           frequency: loan.collectionFreq,
           disbursementMethod: loan.disbursementMethod,
           feesPaymentMethod: loan.feesPaymentMethod,
+
+          registrationNumber: loan.registrationNumber,
+          chassisNumber: loan.chassisNumber,
+          engineNumber: loan.engineNumber,
+          repoFinancerName: loan.repoFinancerName,
+          vehicleDetailsVerified: loan.vehicleDetailsVerified,
+
+          registrationImageUrl: loan.registrationImageUrl,
+          chassisImageUrl: loan.chassisImageUrl,
+          engineImageUrl: loan.engineImageUrl,
+          repoFinancerImageUrl: loan.repoFinancerImageUrl,
 
           fees: {
             processing: loan.processingFees,
@@ -653,8 +813,6 @@ export class LoanService {
       throw new BadRequestException(error.message);
     }
   }
-
-
 
   async closeLoan(
     loanId: string,

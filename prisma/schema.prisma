@@ -212,10 +212,11 @@ enum AccountStatus {
 }
 
 model LoanType {
-  id                String      @id @map("_id") @default(auto()) @db.ObjectId
-  loanName          String      @unique
-  status            LoanStatus  @default(ACTIVE)
+  id                String            @id @map("_id") @default(auto()) @db.ObjectId
+  loanName          String            @unique
+  status            LoanStatus        @default(ACTIVE)
   description       String?
+  vehicleCondition  VehicleCondition  @default(NEW)
 
   // Financial Details
   minAmount         Float
@@ -252,6 +253,11 @@ enum CollectionFrequency {
   BIWEEKLY
   MONTHLY
   QUARTERLY
+}
+
+enum VehicleCondition {
+  NEW
+  USED
 }
 
 // Fees as nested objects
@@ -374,6 +380,19 @@ model LoanApplication {
 
   // Disbursement
   disbursementMethod DisbursementMethod
+
+  // Vehicles
+  registrationNumber   String?
+  chassisNumber        String?
+  engineNumber         String?
+  repoFinancerName     String?
+
+  registrationImageUrl String?
+  chassisImageUrl      String?
+  engineImageUrl       String?
+  repoFinancerImageUrl String?
+
+  vehicleDetailsVerified Boolean @default(false)
 
   // Documents
   vehicleRcDocument        DocumentMeta?

@@ -21,6 +21,7 @@ class OtherFeeDto extends FeeDto {
 export class UpdateLoanTypeDto extends PartialType(CreateLoanTypeDto) {
   @IsOptional() loanName?: string;
   @IsOptional() status?: LoanStatus;
+  @IsOptional() vehicleCondition?: any; // any to avoid typematch error temporarily if client is not generated
   @IsOptional() description?: string;
   @IsOptional() minAmount?: number;
   @IsOptional() maxAmount?: number;

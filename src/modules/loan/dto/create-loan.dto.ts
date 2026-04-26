@@ -63,6 +63,16 @@ export class CreateLoanDto {
     @Type(() => FeeDto)
     additionalFees: FeeDto[]
 
+    // Vehicle fields (optional out-of-the-box, validated functionally for USED loans)
+    @IsOptional() @IsString() registrationNumber?: string;
+    @IsOptional() @IsString() chassisNumber?: string;
+    @IsOptional() @IsString() engineNumber?: string;
+    @IsOptional() @IsString() repoFinancerName?: string;
+
+    @IsOptional() @IsString() registrationImageUrl?: string;
+    @IsOptional() @IsString() chassisImageUrl?: string;
+    @IsOptional() @IsString() engineImageUrl?: string;
+    @IsOptional() @IsString() repoFinancerImageUrl?: string;
 }
 
 export class CallVerifyLoanDto {
