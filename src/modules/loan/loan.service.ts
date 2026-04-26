@@ -4,7 +4,7 @@ import { UpdateLoanDto } from './dto/update-loan.dto';
 import { FeesPaymentMethod } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { calculateTotalFees, calculateFlatLoan, calculateReducingLoan, generateEmiSchedule, calculateDisbursedAmount } from 'src/utils/emi/getPeriodsPerYear';
-import { LoanApplicationStatus } from 'src/common/enums/loan-application-status.enum';
+import { LoanApplicationStatus } from '@prisma/client';
 import { generateContractPdf } from 'src/utils/pdf/generateContract';
 import { uploadToStorage } from 'src/utils/uploadToStorage';
 import { CustomersService } from '../customers/customers.service';
@@ -138,7 +138,7 @@ export class LoanService {
   async getById(id: string) {
     const loan = await this.prisma.loanApplication.findUnique({ where: { id } });
     if (!loan) return null;
-    
+
     const loanType = await this.prisma.loanType.findUnique({
       where: { id: loan.loanTypeId },
       select: { vehicleCondition: true, loanName: true }
@@ -273,7 +273,7 @@ export class LoanService {
   }
 
   async verifyVehicleDetails(loanId: string, user: any) {
-    await this.accessControlService.checkAccess(user.role, 'ADMIN_APPROVED' as LoanApplicationStatus); // Effectively Admin only
+    await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.ADMIN_APPROVED); // Effectively Admin only
     const loan = await this.prisma.loanApplication.findUnique({ where: { id: loanId } });
     if (!loan) throw new NotFoundException('Loan not found');
 
@@ -288,7 +288,7 @@ export class LoanService {
     loanId: string,
     user: any
   ) {
-    await this.accessControlService.checkAccess(user.role, 'CALL_VERIFIED' as LoanApplicationStatus);
+    await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.CALL_VERIFIED);
     const managerId = user.id;
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
@@ -319,7 +319,7 @@ export class LoanService {
     user: any
   ) {
     try {
-      await this.accessControlService.checkAccess(user.role, 'CONTRACT_GENERATED' as LoanApplicationStatus);
+      await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.CONTRACT_GENERATED);
       const managerId = user.id;
       // 1️⃣ Fetch loan with all required relations
       const loan = await this.prisma.loanApplication.findUnique({
@@ -336,7 +336,8 @@ export class LoanService {
         LoanApplicationStatus.CALL_VERIFIED,
         LoanApplicationStatus.CONTRACT_GENERATED,
       ];
-      if (!allowedStatuses.includes(loan.status as LoanApplicationStatus)) {
+
+      if (!allowedStatuses.includes(loan.status)) {
         throw new BadRequestException(
           `Contract cannot be generated from status ${loan.status}`,
         );
@@ -542,7 +543,7 @@ export class LoanService {
     user,
   ) {
     try {
-      await this.accessControlService.checkAccess(user.role, 'CONTRACT_SIGNED' as LoanApplicationStatus);
+      await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.CONTRACT_SIGNED);
       const userId = user.id;
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId }
@@ -599,7 +600,7 @@ export class LoanService {
     user
   }) {
     try {
-      await this.accessControlService.checkAccess(user.role, 'FIELD_VERIFIED' as LoanApplicationStatus);
+      await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.FIELD_VERIFIED);
       const agentId = user.id;
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId }
@@ -671,7 +672,7 @@ export class LoanService {
     user: any,
     remark: string
   ) {
-    await this.accessControlService.checkAccess(user.role, 'ADMIN_APPROVED' as LoanApplicationStatus);
+    await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.ADMIN_APPROVED);
     const adminId = user.id;
     const admin = await this.prisma.admin.findUnique({
       where: { id: adminId },
@@ -689,11 +690,6 @@ export class LoanService {
       throw new NotFoundException('Loan application not found');
     }
 
-    if (loan.status !== LoanApplicationStatus.MANAGER_APPROVED) {
-      throw new BadRequestException(
-        `Loan cannot be admin-approved from status ${loan.status}`
-      );
-    }
 
     await this.prisma.loanApplication.update({
       where: { id: loanId },
@@ -715,7 +711,7 @@ export class LoanService {
     user: any,
     remark: string
   ) {
-    await this.accessControlService.checkAccess(user.role, 'REJECTED' as LoanApplicationStatus);
+    await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.REJECTED);
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
     });
@@ -752,7 +748,7 @@ export class LoanService {
     user: any
   ) {
     try {
-      await this.accessControlService.checkAccess(user.role, 'DISBURSED' as LoanApplicationStatus);
+      await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.DISBURSED);
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId },
       });
@@ -830,7 +826,7 @@ export class LoanService {
     user: any
   ) {
     try {
-      await this.accessControlService.checkAccess(user.role, 'CLOSED' as LoanApplicationStatus);
+      await this.accessControlService.checkAccess(user.role, LoanApplicationStatus.CLOSED);
       const loan = await this.prisma.loanApplication.findUnique({
         where: { id: loanId },
       });
