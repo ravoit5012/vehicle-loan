@@ -861,14 +861,46 @@ export class LoanService {
   }
 
   async getAllFees() {
-    return this.prisma.loanFees.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
+    const fees = await this.prisma.loanFees.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const customerIds = fees.map(f => f.customerId);
+    const loanIds = fees.map(f => f.loanId);
+
+    const customers = await this.prisma.customer.findMany({
+      where: { id: { in: customerIds } },
+    });
+
+    const loans = await this.prisma.loanApplication.findMany({
+      where: { id: { in: loanIds } },
+    });
+
+    const loanTypeIds = loans.map(l => l.loanTypeId);
+
+    const loanTypes = await this.prisma.loanType.findMany({
+      where: { id: { in: loanTypeIds } },
+    });
+
+    return fees.map(fee => {
+      const customer = customers.find(c => c.id === fee.customerId);
+      const loan = loans.find(l => l.id === fee.loanId);
+      const loanType = loanTypes.find(
+        lt => lt.id === loan?.loanTypeId
+      );
+
+      return {
+        ...fee,
+        customer,
+        loan: {
+          ...loan,
+          loanType,
+        },
+      };
     });
   }
 
-  async completeFeePayment(id, loanId, paymentMethod, transactionId) {
+  async completeFeePayment(id, loanId, paymentMethod, transactionId, receipt: any) {
     const fee = await this.prisma.loanFees.findFirst({
       where: {
         id: id,
@@ -890,12 +922,18 @@ export class LoanService {
       );
     }
 
+    const receiptUrl = await uploadToStorage(
+      receipt.buffer,
+      `/loan-fees/${loanId}/${Date.now()}-receipt.jpg`
+    );
+
     return this.prisma.loanFees.update({
       where: { id: fee.id },
       data: {
         paid: true,
         paymentMethod: paymentMethod,
         transactionId: transactionId,
+        receiptUrl: receiptUrl,
         paidAt: new Date(),
       },
     });

@@ -173,9 +173,14 @@ async adminApproveLoan(
 
   @UseGuards(JwtAuthGuard)
   @Post('/collect-fees')
+  @UseInterceptors(FileInterceptor('receipt', { storage: memoryStorage() }))
   async completeFeePayment(
+    @UploadedFile() receipt: Express.Multer.File,
     @Body() body: CompleteFeePaymentDto,
   ) {
+    if (!receipt) {
+      throw new BadRequestException('Payment receipt is required');
+    }
     const { id, loanId, paymentMethod, transactionId } = body;
 
     return this.loanService.completeFeePayment(
@@ -183,6 +188,7 @@ async adminApproveLoan(
       loanId,
       paymentMethod,
       transactionId,
+      receipt,
     );
   }
 

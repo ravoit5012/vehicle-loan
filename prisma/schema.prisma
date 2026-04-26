@@ -419,6 +419,7 @@ model LoanFees {
   paid         Boolean @default(false)
   paymentMethod String?
   transactionId String?
+  receiptUrl    String?
   paidAt        DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
