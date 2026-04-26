@@ -169,18 +169,22 @@ export class LoanService {
         throw new NotFoundException('Loan application not found')
       }
 
-      // 2️⃣ Status validation
-      if (loan.status !== LoanApplicationStatus.CALL_VERIFIED) {
+      // 2️⃣ Status validation — allow generation OR regeneration before signing
+      const allowedStatuses: LoanApplicationStatus[] = [
+        LoanApplicationStatus.CALL_VERIFIED,
+        LoanApplicationStatus.CONTRACT_GENERATED,
+      ];
+      if (!allowedStatuses.includes(loan.status as LoanApplicationStatus)) {
         throw new BadRequestException(
-          `Contract cannot be generated from status ${loan.status}`
-        )
+          `Contract cannot be generated from status ${loan.status}`,
+        );
       }
 
-      // 3️⃣ Prevent regeneration
+      // 3️⃣ Once the contract has been signed, it is immutable.
       if (loan.signedContractDocument) {
         throw new BadRequestException(
-          'Contract already generated'
-        )
+          'Signed contract already on record — cannot regenerate.',
+        );
       }
       const customer = await this.prisma.customer.findUnique({
         where: { id: loan.customerId },
@@ -210,6 +214,7 @@ export class LoanService {
       if (!manager || !agent || !company) {
         throw new NotFoundException('Manager, Agent, or Company not found')
       }
+      console.log("contract data preparation complete, generating PDF...")
       // 4️⃣ Prepare contract data (FROZEN SNAPSHOT)
       const contractData = {
         contractNumber: `CTR-${loan.id.slice(-6).toUpperCase()}`,
@@ -234,16 +239,23 @@ export class LoanService {
         },
 
         customer: {
+          memberId: customer.memberId,
+          accountStatus: customer.accountStatus,
           applicantName: customer.applicantName,
           guardianName: customer.guardianName,
           relationType: customer.relationType,
+          religion: customer.religion,
+          maritalStatus: customer.maritalStatus,
           mobileNumber: customer.mobileNumber,
           email: customer.email,
           gender: customer.gender,
           dob: customer.dateOfBirth,
+          panNumber: customer.panNumber,
 
           address: {
             village: customer.village,
+            postOffice: customer.postOffice,
+            policeStation: customer.policeStation,
             district: customer.district,
             pinCode: customer.pinCode,
           },
@@ -253,20 +265,29 @@ export class LoanService {
 
           documents: {
             pan: customer.panImageUrl,
+            poiType: customer.poiDocumentType,
+            poiNumber: customer.poiDocumentNumber,
             poiFront: customer.poiFrontImageUrl,
             poiBack: customer.poiBackImageUrl,
+            poaType: customer.poaDocumentType,
+            poaNumber: customer.poaDocumentNumber,
             poaFront: customer.poaFrontImageUrl,
             poaBack: customer.poaBackImageUrl,
           },
+
+          extraDocuments: customer.extraDocuments || [],
         },
 
         nominee: {
           name: customer.nomineeName,
           relation: customer.nomineeRelation,
           mobile: customer.nomineeMobileNumber,
+          panNumber: customer.nomineePanNumber,
 
           address: {
             village: customer.nomineeVillage,
+            postOffice: customer.nomineePostOffice,
+            policeStation: customer.nomineePoliceStation,
             district: customer.nomineeDistrict,
             pinCode: customer.nomineePinCode,
           },
@@ -276,8 +297,12 @@ export class LoanService {
 
           documents: {
             pan: customer.nomineePanImageUrl,
+            poiType: customer.nomineePoiDocumentType,
+            poiNumber: customer.nomineePoiDocumentNumber,
             poiFront: customer.nomineePoiFrontImageUrl,
             poiBack: customer.nomineePoiBackImageUrl,
+            poaType: customer.nomineePoaDocumentType,
+            poaNumber: customer.nomineePoaDocumentNumber,
             poaFront: customer.nomineePoaFrontImageUrl,
             poaBack: customer.nomineePoaBackImageUrl,
           },
@@ -296,6 +321,8 @@ export class LoanService {
 
           firstEmiDate: loan.firstEmiDate,
           frequency: loan.collectionFreq,
+          disbursementMethod: loan.disbursementMethod,
+          feesPaymentMethod: loan.feesPaymentMethod,
 
           fees: {
             processing: loan.processingFees,
@@ -310,10 +337,12 @@ export class LoanService {
       // 5️⃣ Generate PDF
       const pdfBuffer = await generateContractPdf(contractData)
 
-      // 6️⃣ Upload PDF to storage
+      // 6️⃣ Upload PDF to storage — unique key per generation so the public CDN
+      //    URL changes on every regen and stale edge-cached copies are bypassed.
+      const versionTag = Date.now();
       const contractUrl = await uploadToStorage(
         pdfBuffer,
-        `/loan-applications/${loan.id}/generated_contract.pdf`
+        `/loan-applications/${loan.id}/generated_contract_${versionTag}.pdf`
       )
 
       // 7️⃣ Update DB (IMMUTABLE RECORD)
