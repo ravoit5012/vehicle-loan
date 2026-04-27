@@ -6,6 +6,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { calculateTotalFees, calculateFlatLoan, calculateReducingLoan, generateEmiSchedule, calculateDisbursedAmount } from 'src/utils/emi/getPeriodsPerYear';
 import { LoanApplicationStatus } from '@prisma/client';
 import { generateContractPdf } from 'src/utils/pdf/generateContract';
+import { generateReceiptPdf } from 'src/utils/pdf/generateReceipt';
 import { uploadToStorage } from 'src/utils/uploadToStorage';
 import { CustomersService } from '../customers/customers.service';
 import { AccessControlService } from '../access-control/access-control.service';
@@ -932,21 +933,69 @@ export class LoanService {
       );
     }
 
-    const receiptUrl = await uploadToStorage(
-      receipt.buffer,
-      `/loan-fees/${loanId}/${Date.now()}-receipt.jpg`
-    );
+    const receiptUrl = receipt
+      ? await uploadToStorage(
+          receipt.buffer,
+          `/loan-fees/${loanId}/${Date.now()}-receipt.jpg`
+        )
+      : null;
 
-    return this.prisma.loanFees.update({
+    // Generate customer receipt PDF
+    let customerReceiptUrl: string | null = null;
+    try {
+      const [company, customer] = await Promise.all([
+        this.prisma.companySettings.findFirst(),
+        this.prisma.customer.findUnique({ where: { id: fee.customerId } }),
+      ]);
+
+      if (company && customer) {
+        const shortId = id.slice(-8).toUpperCase();
+        const pdfBuffer = await generateReceiptPdf({
+          type: 'FEE',
+          company: {
+            name: company.companyName,
+            address: company.companyAddress,
+            phone: company.companyPhone,
+            email: company.companyEmail,
+            logoUrl: company.logoUrl,
+          },
+          customer: {
+            name: customer.applicantName,
+            mobileNumber: customer.mobileNumber,
+            memberId: customer.memberId,
+          },
+          payment: {
+            loanId,
+            receiptNumber: `FEE-${shortId}`,
+            transactionId: transactionId || '—',
+            paymentMethod,
+            paidAt: new Date(),
+            amount: fee.totalFees,
+          },
+        });
+        customerReceiptUrl = await uploadToStorage(
+          pdfBuffer,
+          `/loan-fees/${loanId}/${Date.now()}-customer-receipt.pdf`,
+          'application/pdf',
+        );
+      }
+    } catch (err) {
+      console.error('Failed to generate fee customer receipt:', err);
+    }
+
+    const updated = await this.prisma.loanFees.update({
       where: { id: fee.id },
       data: {
         paid: true,
         paymentMethod: paymentMethod,
         transactionId: transactionId,
         receiptUrl: receiptUrl,
+        customerReceiptUrl: customerReceiptUrl,
         paidAt: new Date(),
       },
     });
+
+    return { ...updated, customerReceiptUrl };
   }
 
   async getAllRepayments() {
@@ -1036,6 +1085,62 @@ export class LoanService {
       emi.status = 'PARTIAL';
     }
 
+    // Generate customer receipt PDF BEFORE persisting so we can attach the
+    // resulting URL to the embedded RepaymentSnapshot.
+    let customerReceiptUrl: string | null = null;
+    try {
+      const [company, customer] = await Promise.all([
+        this.prisma.companySettings.findFirst(),
+        this.prisma.customer.findUnique({ where: { id: loan.customerId } }),
+      ]);
+
+      if (company && customer) {
+        const shortId = loanId.slice(-6).toUpperCase();
+        const pdfBuffer = await generateReceiptPdf({
+          type: 'EMI',
+          company: {
+            name: company.companyName,
+            address: company.companyAddress,
+            phone: company.companyPhone,
+            email: company.companyEmail,
+            logoUrl: company.logoUrl,
+          },
+          customer: {
+            name: customer.applicantName,
+            mobileNumber: customer.mobileNumber,
+            memberId: customer.memberId,
+          },
+          payment: {
+            loanId,
+            receiptNumber: `EMI-${shortId}-${dto.emiNumber}`,
+            transactionId: dto.transactionId || '—',
+            paymentMethod: dto.paymentMethod,
+            paidAt: emi.paidDate ?? new Date(),
+            amount: dto.paidAmount,
+            emiNumber: dto.emiNumber,
+          },
+        });
+        customerReceiptUrl = await uploadToStorage(
+          pdfBuffer,
+          `loan-repayments/${loanId}/emi-${dto.emiNumber}-customer-receipt.pdf`,
+          'application/pdf',
+        );
+      }
+    } catch (err) {
+      console.error('Failed to generate EMI customer receipt:', err);
+    }
+
+    // The Prisma client must be regenerated (server restart) for the new
+    // `customerReceiptUrl` field on RepaymentSnapshot. Until that happens,
+    // the generated types don't include it — cast to `any` to assign safely.
+    if (customerReceiptUrl) {
+      (emi as any).customerReceiptUrl = customerReceiptUrl;
+    }
+
+    if (dto.transactionId) {
+      emi.transactionId = dto.transactionId;
+    }
+
     repayments[index] = emi;
 
     // Update remaining loan amount
@@ -1060,6 +1165,7 @@ export class LoanService {
       emi,
       remainingAmount: Math.max(newRemaining, 0),
       loanStatus: newStatus,
+      customerReceiptUrl,
     };
   }
 

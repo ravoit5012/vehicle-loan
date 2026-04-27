@@ -331,7 +331,8 @@ type RepaymentSnapshot {
   paidDate      DateTime?
   status        String
   transactionId String?
-  proofUrl      String? 
+  proofUrl      String?
+  customerReceiptUrl String?
   principalAmount Float     
   interestAmount  Float     
 }
@@ -420,6 +421,7 @@ model LoanFees {
   paymentMethod String?
   transactionId String?
   receiptUrl    String?
+  customerReceiptUrl String?
   paidAt        DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

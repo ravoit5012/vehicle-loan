@@ -178,7 +178,7 @@ export class LoanController {
     @UploadedFile() receipt: Express.Multer.File,
     @Body() body: CompleteFeePaymentDto,
   ) {
-    if (!receipt) {
+    if (!receipt && body.paymentMethod !== 'CASH') {
       throw new BadRequestException('Payment receipt is required');
     }
     const { id, loanId, paymentMethod, transactionId } = body;
