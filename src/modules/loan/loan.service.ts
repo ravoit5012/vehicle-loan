@@ -21,10 +21,13 @@ export class LoanService {
 
   async createLoanApplication(dto, user?: any) {
     const agentId = dto.agentId;
+    const agent = await this.prisma.agent.findUnique({
+      where: { id: agentId },
+    });
     const customer = await this.prisma.customer.findUnique({
       where: { id: dto.customerId },
     });
-    const managerId = customer?.managerId;
+    const managerId = agent?.managerId;
     const loanType = await this.prisma.loanType.findUnique({
       where: { id: dto.loanTypeId },
     });

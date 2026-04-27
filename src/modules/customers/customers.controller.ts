@@ -92,6 +92,10 @@ export class CustomersController {
     return this.service.findAll(req.user);
   }
 
+  @Get('get-all')
+  getAllCustomersNoFilter() {
+    return this.service.findAllNoFilter();
+  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.MANAGER, Role.AGENT)

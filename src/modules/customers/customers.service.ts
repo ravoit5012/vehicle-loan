@@ -28,7 +28,7 @@ export class CustomersService {
             fileArr[0].mimetype
           );
         }
-        return ''; 
+        return '';
       };
 
       const panImageUrl = await getFileUrl('panImageUrl', files?.panImage, 'pan');
@@ -128,6 +128,9 @@ export class CustomersService {
         agentId: true
       },
     });
+  }
+  async findAllNoFilter() {
+    return this.prisma.customer.findMany({});
   }
 
   async getCustomerById(id: string) {
@@ -388,62 +391,62 @@ export class CustomersService {
     }
   }
 
-async uploadExtraDocuments(
-  customerId: string,
-  dto: UploadExtraDocumentsDto,
-  files: any,
-) {
+  async uploadExtraDocuments(
+    customerId: string,
+    dto: UploadExtraDocumentsDto,
+    files: any,
+  ) {
 
-  const customer = await this.prisma.customer.findUnique({
-    where: { id: customerId },
-  });
-
-  if (!customer) {
-    throw new NotFoundException('Customer not found');
-  }
-
-  if (!files?.documents?.length) {
-    throw new BadRequestException('No documents uploaded');
-  }
-
-  const existingDocs = customer.extraDocuments || [];
-
-  if (existingDocs.length + files.documents.length > 20) {
-    throw new BadRequestException('Maximum 20 documents allowed');
-  }
-
-  const newDocs: any[] = [];
-
-  for (let i = 0; i < files.documents.length; i++) {
-
-    const file = files.documents[i];
-    const name = dto.documentNames[i];
-
-    const key = `customers/${customerId}/extra/${name}`;
-
-    const url = await uploadToStorage(
-      file.buffer,
-      key,
-      file.mimetype
-    );
-
-    newDocs.push({
-      id: Date.now().toString() + Math.random(),
-      name,
-      url,
-      uploadedAt: new Date(),
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
     });
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    if (!files?.documents?.length) {
+      throw new BadRequestException('No documents uploaded');
+    }
+
+    const existingDocs = customer.extraDocuments || [];
+
+    if (existingDocs.length + files.documents.length > 20) {
+      throw new BadRequestException('Maximum 20 documents allowed');
+    }
+
+    const newDocs: any[] = [];
+
+    for (let i = 0; i < files.documents.length; i++) {
+
+      const file = files.documents[i];
+      const name = dto.documentNames[i];
+
+      const key = `customers/${customerId}/extra/${name}`;
+
+      const url = await uploadToStorage(
+        file.buffer,
+        key,
+        file.mimetype
+      );
+
+      newDocs.push({
+        id: Date.now().toString() + Math.random(),
+        name,
+        url,
+        uploadedAt: new Date(),
+      });
+    }
+
+    await this.prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        extraDocuments: [...existingDocs, ...newDocs],
+      },
+    });
+
+    return { message: 'Documents uploaded successfully' };
   }
-
-  await this.prisma.customer.update({
-    where: { id: customerId },
-    data: {
-      extraDocuments: [...existingDocs, ...newDocs],
-    },
-  });
-
-  return { message: 'Documents uploaded successfully' };
-}
 
   async uploadSingleDocument(file: any, applicantName: string, mobileNumber: string, documentType: string) {
     if (!file) {
