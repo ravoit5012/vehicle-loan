@@ -94,8 +94,12 @@ export class CompleteFeePaymentDto {
     @IsString()
     paymentMethod: string;
 
+    @IsOptional()
     @IsString()
-    transactionId: string;
+    transactionId?: string;
+
+    @IsString()
+    collectedBy: string;
 }
 
 export class PayEmiDto {
@@ -111,8 +115,12 @@ export class PayEmiDto {
   @IsString()
   paymentMethod: string;
 
+  @IsOptional()
   @IsString()
-  transactionId: string;
+  transactionId?: string;
+
+  @IsString()
+  collectedBy: string;
 
   @IsOptional()
   @IsString()

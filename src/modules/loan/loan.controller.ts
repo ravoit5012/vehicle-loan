@@ -181,13 +181,17 @@ export class LoanController {
     if (!receipt && body.paymentMethod !== 'CASH') {
       throw new BadRequestException('Payment receipt is required');
     }
-    const { id, loanId, paymentMethod, transactionId } = body;
+    if (!body.collectedBy || !body.collectedBy.trim()) {
+      throw new BadRequestException('Collector name is required');
+    }
+    const { id, loanId, paymentMethod, transactionId, collectedBy } = body;
 
     return this.loanService.completeFeePayment(
       id,
       loanId,
       paymentMethod,
-      transactionId,
+      transactionId ?? '',
+      collectedBy,
       receipt,
     );
   }

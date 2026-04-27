@@ -331,10 +331,11 @@ type RepaymentSnapshot {
   paidDate      DateTime?
   status        String
   transactionId String?
+  collectedBy   String?
   proofUrl      String?
   customerReceiptUrl String?
-  principalAmount Float     
-  interestAmount  Float     
+  principalAmount Float
+  interestAmount  Float
 }
 
 model LoanApplication {
@@ -420,6 +421,7 @@ model LoanFees {
   paid         Boolean @default(false)
   paymentMethod String?
   transactionId String?
+  collectedBy   String?
   receiptUrl    String?
   customerReceiptUrl String?
   paidAt        DateTime?

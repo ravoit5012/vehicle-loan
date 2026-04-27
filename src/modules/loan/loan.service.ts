@@ -811,6 +811,7 @@ export class LoanService {
             paid: isDeducted,
             paymentMethod: isDeducted ? 'DISBURSEMENT' : null,
             transactionId: isDeducted ? 'DISBURSEMENT' : null,
+            collectedBy: isDeducted ? user.name : null,
             paidAt: isDeducted ? new Date() : null,
           },
         }),
@@ -911,7 +912,7 @@ export class LoanService {
     });
   }
 
-  async completeFeePayment(id, loanId, paymentMethod, transactionId, receipt: any) {
+  async completeFeePayment(id, loanId, paymentMethod, transactionId, collectedBy, receipt: any) {
     const fee = await this.prisma.loanFees.findFirst({
       where: {
         id: id,
@@ -967,7 +968,8 @@ export class LoanService {
           payment: {
             loanId,
             receiptNumber: `FEE-${shortId}`,
-            transactionId: transactionId || '—',
+            transactionId: transactionId || undefined,
+            collectedBy,
             paymentMethod,
             paidAt: new Date(),
             amount: fee.totalFees,
@@ -988,11 +990,12 @@ export class LoanService {
       data: {
         paid: true,
         paymentMethod: paymentMethod,
-        transactionId: transactionId,
+        transactionId: transactionId || null,
+        collectedBy: collectedBy,
         receiptUrl: receiptUrl,
         customerReceiptUrl: customerReceiptUrl,
         paidAt: new Date(),
-      },
+      } as any,
     });
 
     return { ...updated, customerReceiptUrl };
@@ -1035,6 +1038,10 @@ export class LoanService {
   }
 
   async payEmi(loanId: string, dto, files: any) {
+
+    if (!dto?.collectedBy || !String(dto.collectedBy).trim()) {
+      throw new BadRequestException('Collector name is required');
+    }
 
     let proofUrl: string | null = null;
 
@@ -1113,7 +1120,8 @@ export class LoanService {
           payment: {
             loanId,
             receiptNumber: `EMI-${shortId}-${dto.emiNumber}`,
-            transactionId: dto.transactionId || '—',
+            transactionId: dto.transactionId || undefined,
+            collectedBy: dto.collectedBy,
             paymentMethod: dto.paymentMethod,
             paidAt: emi.paidDate ?? new Date(),
             amount: dto.paidAmount,
@@ -1140,6 +1148,8 @@ export class LoanService {
     if (dto.transactionId) {
       emi.transactionId = dto.transactionId;
     }
+
+    (emi as any).collectedBy = dto.collectedBy;
 
     repayments[index] = emi;
 

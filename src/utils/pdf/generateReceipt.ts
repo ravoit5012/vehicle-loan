@@ -30,7 +30,8 @@ export interface ReceiptData {
     payment: {
         loanId: string;
         receiptNumber: string;      // unique ref e.g. "FEE-<shortId>" or "EMI-<loanShort>-<emiNo>"
-        transactionId: string;      // UTR / Collected by
+        transactionId?: string;     // UTR / reference number for non-CASH payments
+        collectedBy: string;        // name of the agent / manager who collected the payment
         paymentMethod: string;
         paidAt: Date;
         amount: number;
@@ -143,7 +144,7 @@ async function buildReceipt(doc: any, data: ReceiptData) {
     const labelW = 190;
     const valW = innerW - labelW;
 
-    const isCash = data.payment.paymentMethod === 'CASH';
+    const hasTxnRef = !!(data.payment.transactionId && data.payment.transactionId.trim());
 
     const rows: Array<[string, string]> = [
         ['Receipt No.', safeStr(data.payment.receiptNumber)],
@@ -154,7 +155,10 @@ async function buildReceipt(doc: any, data: ReceiptData) {
         ...(data.type === 'EMI' && data.payment.emiNumber != null
             ? [['EMI Number', String(data.payment.emiNumber)] as [string, string]]
             : []),
-        [isCash ? 'Collected by' : 'Transaction Reference No.', safeStr(data.payment.transactionId)],
+        ['Collected By', safeStr(data.payment.collectedBy)],
+        ...(hasTxnRef
+            ? [['Transaction Reference No.', safeStr(data.payment.transactionId)] as [string, string]]
+            : []),
         ['Payment Method', humanize(data.payment.paymentMethod)],
         ['Transaction Status', 'Success'],
         ['Transaction Date', formatDateTime(data.payment.paidAt)],
