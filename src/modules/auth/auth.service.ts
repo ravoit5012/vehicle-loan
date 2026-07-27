@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -81,5 +81,36 @@ export class AuthService {
     }
   }
 
+  async updateAdminPassword(adminId: string, password: string, confirmPassword: string) {
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Password and confirm password do not match');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const updatedAdmin = await this.prisma.admin.update({
+      where: { id: adminId },
+      data: {
+        password: hashedPassword,
+        tokenVersion: { increment: 1 },
+      },
+    });
+
+    const payload = {
+      sub: updatedAdmin.id,
+      username: updatedAdmin.username,
+      role: Role.ADMIN,
+      tokenVersion: updatedAdmin.tokenVersion,
+    };
+
+    const token = this.jwtService.sign(payload, {
+      secret: constantValues.jwtSecret,
+      expiresIn: constantValues.jwtExpiry,
+    });
+
+    const { password: _, ...safeAdmin } = updatedAdmin;
+
+    return { token, user: safeAdmin };
+  }
 
 }

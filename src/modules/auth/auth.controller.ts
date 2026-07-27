@@ -1,8 +1,11 @@
-import { Get, Body, Controller, Post, Res } from '@nestjs/common';
+import { Get, Body, Controller, Post, Put, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { UseGuards, Req } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth-guard';
+import { RolesGuard } from 'src/common/guards/role-guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { AuthService } from './auth.service';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 import { Role } from 'src/common/enums/role.enum';
 import { constantValues } from 'src/common/constants';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -57,5 +60,32 @@ export class AuthController {
   @Get('dashboard')
   getDashboard(@Req() req) {
     return { user: req.user };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Put('update-password')
+  async updatePassword(
+    @Req() req,
+    @Body() dto: UpdatePasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { token, user } = await this.authService.updateAdminPassword(
+      req.user.id,
+      dto.password,
+      dto.confirmPassword,
+    );
+
+    res.cookie('loginToken', token, {
+      httpOnly: true,
+      secure: process.env.ENVIRONMENT === 'development',
+      sameSite: 'lax',
+      maxAge: constantValues.jwtExpiry,
+    });
+
+    return {
+      message: 'Password updated successfully',
+      user,
+    };
   }
 }
