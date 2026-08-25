@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { MulterError } from 'multer';
 
 function flattenConstraints(node: any): string[] {
   if (!node || typeof node !== 'object') return [];
@@ -45,17 +46,24 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
+
+    const isFileTooLarge = exception instanceof MulterError && exception.code === 'LIMIT_FILE_SIZE';
+
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+        : isFileTooLarge
+          ? HttpStatus.PAYLOAD_TOO_LARGE
+          : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const raw =
       exception instanceof HttpException
         ? exception.getResponse()
-        : exception instanceof Error
-          ? { message: exception.message }
-          : { message: 'Internal server error' };
+        : isFileTooLarge
+          ? { message: 'This file is too large. Please use an image under 20MB.' }
+          : exception instanceof Error
+            ? { message: exception.message }
+            : { message: 'Internal server error' };
 
     const message = toMessageString(raw);
 

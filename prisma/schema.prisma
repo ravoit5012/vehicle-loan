@@ -132,6 +132,35 @@ model Customer {
   applicantSignatureUrl String
   personalPhotoUrl      String
 
+  // Bank Details (Borrower)
+  bankName          String?
+  bankAccountNumber String?
+  bankIfscCode      String?
+  bankAddress       String?
+
+  chequeNumber1   String?
+  chequeNumber2   String?
+  chequeNumber3   String?
+  chequeNumber4   String?
+  chequeImage1Url String?
+  chequeImage2Url String?
+  chequeImage3Url String?
+  chequeImage4Url String?
+
+  // Bank Details (Nominee) - optional block
+  nomineeBankName          String?
+  nomineeBankAccountNumber String?
+  nomineeBankIfscCode      String?
+  nomineeBankAddress       String?
+
+  nomineeChequeNumber1   String?
+  nomineeChequeNumber2   String?
+  nomineeChequeNumber3   String?
+  nomineeChequeNumber4   String?
+  nomineeChequeImage1Url String?
+  nomineeChequeImage2Url String?
+  nomineeChequeImage3Url String?
+  nomineeChequeImage4Url String?
 
   extraDocuments CustomerExtraDocument[]
 

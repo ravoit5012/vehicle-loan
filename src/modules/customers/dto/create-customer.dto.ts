@@ -127,6 +127,104 @@ export class CreateCustomerDto {
   @IsOptional()
   personalPhotoUrl?: string
 
+  // Bank Details (Borrower)
+  @IsString()
+  @IsOptional()
+  bankName?: string
+
+  @IsString()
+  @IsOptional()
+  bankAccountNumber?: string
+
+  @IsString()
+  @IsOptional()
+  bankIfscCode?: string
+
+  @IsString()
+  @IsOptional()
+  bankAddress?: string
+
+  @IsString()
+  @IsOptional()
+  chequeNumber1?: string
+
+  @IsString()
+  @IsOptional()
+  chequeNumber2?: string
+
+  @IsString()
+  @IsOptional()
+  chequeNumber3?: string
+
+  @IsString()
+  @IsOptional()
+  chequeNumber4?: string
+
+  @IsString()
+  @IsOptional()
+  chequeImage1Url?: string
+
+  @IsString()
+  @IsOptional()
+  chequeImage2Url?: string
+
+  @IsString()
+  @IsOptional()
+  chequeImage3Url?: string
+
+  @IsString()
+  @IsOptional()
+  chequeImage4Url?: string
+
+  // Bank Details (Nominee) - optional block
+  @IsString()
+  @IsOptional()
+  nomineeBankName?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeBankAccountNumber?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeBankIfscCode?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeBankAddress?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeChequeNumber1?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeChequeNumber2?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeChequeNumber3?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeChequeNumber4?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeChequeImage1Url?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeChequeImage2Url?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeChequeImage3Url?: string
+
+  @IsString()
+  @IsOptional()
+  nomineeChequeImage4Url?: string
+
     // Documents
   @IsString()
   nomineePanNumber: string

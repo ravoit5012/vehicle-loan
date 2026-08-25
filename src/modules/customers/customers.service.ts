@@ -46,6 +46,17 @@ export class CustomersService {
       const nomineePoaBackImageUrl = await getFileUrl('nomineePoaBackImageUrl', files?.nomineePoaBackImage, 'nomineePoaBack');
       const nomineeSignatureUrl = await getFileUrl('nomineeSignatureUrl', files?.nomineeSignature, 'nomineeSignature');
       const nomineePersonalPhotoUrl = await getFileUrl('nomineePersonalPhotoUrl', files?.nomineePersonalPhoto, 'nomineePhoto');
+
+      const chequeImage1Url = await getFileUrl('chequeImage1Url', files?.chequeImage1, 'cheque1');
+      const chequeImage2Url = await getFileUrl('chequeImage2Url', files?.chequeImage2, 'cheque2');
+      const chequeImage3Url = await getFileUrl('chequeImage3Url', files?.chequeImage3, 'cheque3');
+      const chequeImage4Url = await getFileUrl('chequeImage4Url', files?.chequeImage4, 'cheque4');
+
+      const nomineeChequeImage1Url = await getFileUrl('nomineeChequeImage1Url', files?.nomineeChequeImage1, 'nomineeCheque1');
+      const nomineeChequeImage2Url = await getFileUrl('nomineeChequeImage2Url', files?.nomineeChequeImage2, 'nomineeCheque2');
+      const nomineeChequeImage3Url = await getFileUrl('nomineeChequeImage3Url', files?.nomineeChequeImage3, 'nomineeCheque3');
+      const nomineeChequeImage4Url = await getFileUrl('nomineeChequeImage4Url', files?.nomineeChequeImage4, 'nomineeCheque4');
+
       return this.prisma.customer.create({
         data: {
           ...dto,
@@ -67,6 +78,14 @@ export class CustomersService {
           nomineePoaBackImageUrl,
           nomineeSignatureUrl,
           nomineePersonalPhotoUrl,
+          chequeImage1Url,
+          chequeImage2Url,
+          chequeImage3Url,
+          chequeImage4Url,
+          nomineeChequeImage1Url,
+          nomineeChequeImage2Url,
+          nomineeChequeImage3Url,
+          nomineeChequeImage4Url,
         },
       });
     } catch (error) {
@@ -308,6 +327,15 @@ export class CustomersService {
       await overwriteIfExists('nomineePoaBackImage', 'nomineePoaBack');
       await overwriteIfExists('nomineeSignature', 'nomineeSignature');
       await overwriteIfExists('nomineePersonalPhoto', 'nomineePhoto');
+
+      await overwriteIfExists('chequeImage1', 'cheque1');
+      await overwriteIfExists('chequeImage2', 'cheque2');
+      await overwriteIfExists('chequeImage3', 'cheque3');
+      await overwriteIfExists('chequeImage4', 'cheque4');
+      await overwriteIfExists('nomineeChequeImage1', 'nomineeCheque1');
+      await overwriteIfExists('nomineeChequeImage2', 'nomineeCheque2');
+      await overwriteIfExists('nomineeChequeImage3', 'nomineeCheque3');
+      await overwriteIfExists('nomineeChequeImage4', 'nomineeCheque4');
 
 
       // if (panImageUrl) updatableData.panImageUrl = panImageUrl;

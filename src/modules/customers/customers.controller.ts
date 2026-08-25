@@ -25,6 +25,11 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { UploadExtraDocumentsDto } from './dto/create-customer.dto';
 import constants from 'constants';
 
+// Safety net, not a real-world constraint — client-side compression keeps
+// typical uploads well under this, but a raw camera photo can occasionally
+// be large, so this only rejects genuinely oversized/unexpected payloads.
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly service: CustomersService) { }
@@ -47,9 +52,18 @@ export class CustomersController {
         { name: 'nomineePoaBackImage', maxCount: 1 },
         { name: 'nomineeSignature', maxCount: 1 },
         { name: 'nomineePersonalPhoto', maxCount: 1 },
+        { name: 'chequeImage1', maxCount: 1 },
+        { name: 'chequeImage2', maxCount: 1 },
+        { name: 'chequeImage3', maxCount: 1 },
+        { name: 'chequeImage4', maxCount: 1 },
+        { name: 'nomineeChequeImage1', maxCount: 1 },
+        { name: 'nomineeChequeImage2', maxCount: 1 },
+        { name: 'nomineeChequeImage3', maxCount: 1 },
+        { name: 'nomineeChequeImage4', maxCount: 1 },
       ],
       {
         storage: memoryStorage(),
+        limits: { fileSize: MAX_FILE_SIZE_BYTES },
       },
     ),
   )
@@ -129,6 +143,14 @@ export class CustomersController {
         { name: 'nomineePoaBackImage', maxCount: 1 },
         { name: 'nomineeSignature', maxCount: 1 },
         { name: 'nomineePersonalPhoto', maxCount: 1 },
+        { name: 'chequeImage1', maxCount: 1 },
+        { name: 'chequeImage2', maxCount: 1 },
+        { name: 'chequeImage3', maxCount: 1 },
+        { name: 'chequeImage4', maxCount: 1 },
+        { name: 'nomineeChequeImage1', maxCount: 1 },
+        { name: 'nomineeChequeImage2', maxCount: 1 },
+        { name: 'nomineeChequeImage3', maxCount: 1 },
+        { name: 'nomineeChequeImage4', maxCount: 1 },
       ],
       {
         storage: diskStorage({
@@ -138,6 +160,7 @@ export class CustomersController {
             cb(null, uniqueSuffix + extname(file.originalname));
           },
         }),
+        limits: { fileSize: MAX_FILE_SIZE_BYTES },
       },
     ),
   )
@@ -178,7 +201,7 @@ export class CustomersController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [{ name: 'documents', maxCount: 20 }],
-      { storage: memoryStorage() }
+      { storage: memoryStorage(), limits: { fileSize: MAX_FILE_SIZE_BYTES } }
     )
   )
   async uploadExtraDocuments(
@@ -189,7 +212,7 @@ export class CustomersController {
     return this.service.uploadExtraDocuments(customerId, dto, files);
   }
   @Post('/upload-single-document')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: MAX_FILE_SIZE_BYTES } }))
   async uploadSingleDocument(
     @UploadedFile() file: any,
     @Body() body: { applicantName: string; mobileNumber: string; documentType: string }

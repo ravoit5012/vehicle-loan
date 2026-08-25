@@ -14,8 +14,11 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose']
   });
-  // app.use(bodyParser.json({ limit: '50mb' }));
-  // app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+  // JSON/urlencoded bodies never carry file bytes (uploads go through multer
+  // as multipart), so this is a safety cap against runaway payloads, not a
+  // real-world constraint on the current request shapes.
+  app.use(bodyParser.json({ limit: '2mb' }));
+  app.use(bodyParser.urlencoded({ limit: '2mb', extended: true }));
 
   app.enableCors({
     origin: [
